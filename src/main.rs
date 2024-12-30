@@ -1,6 +1,6 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use bevy::prelude::*;
+use bevy::{prelude::*,  winit::WinitSettings};
 use ui::setup_ui;
 
 mod view;
@@ -21,15 +21,16 @@ fn spawn_camera(mut commands: Commands) {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .insert_resource(WinitSettings::desktop_app())
         .add_systems(Startup, (
             setup,
             spawn_camera,
             setup_ui,
-            ui::toolbar_system,
         ))
         .add_systems(Update, (
             view::pan_orbit_camera
                 .run_if(any_with_component::<view::PanOrbitState>),
+                ui::button_system,
         ))
         .run();
 }
