@@ -7,10 +7,16 @@ use std::collections::HashSet;
 
 use super::{colors, vec3_rounded::Vec3Rounded};
 
+#[derive(Resource)]
+pub struct ToolResources {
+    pub material_handle: Handle<StandardMaterial>,
+    pub mesh_handle: Handle<Mesh>,
+}
+
 /*
 method takes a ref of a Bevy mesh and returns a map of unique vertices
 */
-fn get_vertices(mesh: &Mesh) -> Vec<Vec3> {
+pub fn get_vertices(mesh: &Mesh) -> Vec<Vec3> {
     let Some(bevy::render::mesh::VertexAttributeValues::Float32x3(raw_positions)) = 
         mesh.attribute(Mesh::ATTRIBUTE_POSITION)
     else {

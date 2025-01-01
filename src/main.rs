@@ -1,6 +1,6 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use bevy::{prelude::*,  winit::WinitSettings};
+use bevy::{prelude::*,  winit::WinitSettings, picking::{pointer::PointerInteraction}};
 use ui::setup_ui;
 
 mod view;
@@ -20,7 +20,7 @@ fn spawn_camera(mut commands: Commands) {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((DefaultPlugins, MeshPickingPlugin))
         .insert_resource(WinitSettings::desktop_app())
         .add_systems(Startup, (
             setup,
@@ -30,7 +30,7 @@ fn main() {
         .add_systems(Update, (
             view::pan_orbit_camera
                 .run_if(any_with_component::<view::PanOrbitState>),
-                ui::button_system,
+                ui::button_highlight_system,
         ))
         .run();
 }
@@ -41,6 +41,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>
 ) {
+
     // circular base
     commands.spawn((
         Mesh3d(meshes.add(Circle::new(4.0))),
@@ -52,7 +53,7 @@ fn setup(
         Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, 0.5, 0.0),
-    ));
+    )).observe(on_click_print_hello);;
     // light
     commands.spawn((
         PointLight {
@@ -62,9 +63,14 @@ fn setup(
         Transform::from_xyz(4.0, 8.0, 4.0),
     ));
     // camera
-    /*commands.spawn((
-        Camera3d::default(),
-        Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));*/
+    // commands.spawn((
+    //     Camera3d::default(),
+    //     Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+    // ));
 
+}
+
+
+fn on_click_print_hello(click: Trigger<Pointer<Click>>) {
+    println!("{} was clicked!", click.entity());
 }
