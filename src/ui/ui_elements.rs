@@ -1,5 +1,4 @@
-use bevy::picking::mesh_picking::ray_cast::ray_mesh_intersection;
-use bevy_mod_picking::prelude::*;
+
 use bevy::prelude::*;
 use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
 use crate::tools::tools::{create_vertex_dummies, get_vertices};
@@ -123,18 +122,18 @@ pub fn button_highlight_system(
 
 // #[derive(Event)]
 // pub enum ButtonAction {
-//     Save,
-//     Load,
-//     Exit,
+//     // Save,
+//     // Load,
+//     // Exit,
 //     ViewVertices,
 // }
 
 // // Component to identify button type
 // #[derive(Component)]
 // pub enum ButtonType {
-//     Save,
-//     Load,
-//     Exit,
+//     // Save,
+//     // Load,
+//     // Exit,
 //     ViewVertices,
 // }
 
@@ -149,9 +148,9 @@ pub fn button_highlight_system(
 //         if *interaction == Interaction::Pressed {
 //             // Emit the appropriate event based on button type
 //             match *button_type {
-//                 ButtonType::Save => button_events.send(ButtonAction::Save),
-//                 ButtonType::Load => button_events.send(ButtonAction::Load),
-//                 ButtonType::Exit => button_events.send(ButtonAction::Exit),
+//             //     ButtonType::Save => button_events.send(ButtonAction::Save),
+//             //     ButtonType::Load => button_events.send(ButtonAction::Load),
+//             //     ButtonType::Exit => button_events.send(ButtonAction::Exit),
 //                 ButtonType::ViewVertices => button_events.send(ButtonAction::ViewVertices),
 //             };
 //         }
@@ -159,28 +158,31 @@ pub fn button_highlight_system(
 // }
 
 // Add event handler system
-fn handle_button_actions(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut events: EventReader<ButtonAction>,
-    selected: Res<SelectedMesh>,
-    mesh_assests: Res<Assets<Mesh>>,
-) {
-    for event in events.read() {
-        match event {
-            ButtonAction::Save => { /* Save logic */ },
-            ButtonAction::Load => { /* Load logic */ },
-            ButtonAction::Exit => { /* Exit logic */ },
-            ButtonAction::ViewVertices => { 
-                println!("View Vertices button pressed");
-                if let Some(mesh_handle) = &selected.mesh {
-                    if let Some(mesh) = mesh_assests.get(mesh_handle) {
-                        let vertices = get_vertices(mesh);
-                        // create_vertex_dummies(commands, materials, meshes, &vertices);
-                    }
-                }
-             },
-        }
-    }
-}
+// pub fn handle_button_actions(
+//     mut commands: Commands,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     mut materials: ResMut<Assets<StandardMaterial>>,
+//     mut events: EventReader<ButtonAction>,
+// ) {
+//     let mut vertices = vec![];
+//     for event in events.read() {
+//         match event {
+//             // ButtonAction::Save => { /* Save logic */ },
+//             // ButtonAction::Load => { /* Load logic */ },
+//             // ButtonAction::Exit => { /* Exit logic */ },
+//             ButtonAction::ViewVertices => { 
+//                 println!("View Vertices button pressed");
+//                 if let Some(mesh_handle) = &selected.mesh {
+//                     if let Some(mesh) = meshes.get(mesh_handle) {
+//                         let vertices = get_vertices(mesh);
+
+//                     }
+//                 }
+//              },
+//         }
+//     }
+//     if vertices.len() > 0 {
+//         create_vertex_dummies(commands, materials, meshes, &vertices);
+//     }
+//     vertices = vec![];
+// }
