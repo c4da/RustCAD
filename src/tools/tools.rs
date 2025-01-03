@@ -1,8 +1,8 @@
 
 //tools module
 use bevy::prelude::*;
-use bevy::render::mesh::{Mesh, SphereMeshBuilder, SphereKind};
-use bevy::pbr::{MaterialMeshBundle, StandardMaterial};
+use bevy::render::mesh::{Mesh};
+use bevy::pbr::{StandardMaterial};
 use std::collections::HashSet;
 
 use super::{colors, vec3_rounded::Vec3Rounded};

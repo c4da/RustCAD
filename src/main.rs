@@ -12,7 +12,7 @@ use tools::colors::{HOVER_COLOR, NO_CHANGE_COLOR, PRESSED_COLOR, WHITE};
 //     PointerClick, OnPointerDown,
 // };
 
-use tools::tools::StoredVertices;
+// use tools::tools::StoredVertices;
 use tools::colors::*;
 
 mod view;
@@ -33,7 +33,7 @@ fn spawn_camera(mut commands: Commands) {
 
 fn main() {
     App::new()
-        .init_resource::<StoredVertices>()
+        // .init_resource::<StoredVertices>()
         .add_plugins((DefaultPlugins, MeshPickingPlugin))
         // .insert_resource(WinitSettings::desktop_app())
         .add_systems(Startup, (
@@ -48,7 +48,7 @@ fn main() {
             ui::button_highlight_system,
             draw_mesh_intersections, 
             rotate,
-            tools::tools::create_vertex_dummies, //make create vertex dummies run every frame so it has access to system resources
+            // tools::tools::create_vertex_dummies, //make create vertex dummies run every frame so it has access to system resources
         ))
         .run();
 }
@@ -72,14 +72,14 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut stored: ResMut<StoredVertices>,
+    // mut stored: ResMut<StoredVertices>,
 ) {
     // circular base
     commands.spawn((
         Mesh3d(meshes.add(Circle::new(400.0))),
         MeshMaterial3d(materials.add(GRAY)),
         Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
-        GlobalTransform::default(),
+        // GlobalTransform::default(),
         Visibility::Visible,
         PickingBehavior::IGNORE, // Disable picking for the ground plane.
     ));
@@ -91,7 +91,7 @@ fn setup(
         Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, 0.5, 0.0),
-        GlobalTransform::default(),
+        // GlobalTransform::default(),
         Visibility::Visible,
         Shape,
     ))
@@ -105,7 +105,7 @@ fn setup(
         Mesh3d( meshes.add(Cuboid::new(10.0, 10.0, 10.0))),
         MeshMaterial3d(materials.add(RED)),
         Transform::from_xyz(20.0, 10.5, 0.0),
-        GlobalTransform::default(),
+        // GlobalTransform::default(),
         Visibility::Visible,
         Shape,
     ));
@@ -117,7 +117,7 @@ fn setup(
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
-        GlobalTransform::default(),
+        // GlobalTransform::default(),
     ));
 
     // // Ground
