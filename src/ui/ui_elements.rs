@@ -159,28 +159,28 @@ pub fn button_highlight_system(
 // }
 
 // Add event handler system
-fn handle_button_actions(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut events: EventReader<ButtonAction>,
-    selected: Res<SelectedMesh>,
-    mesh_assests: Res<Assets<Mesh>>,
-) {
-    for event in events.read() {
-        match event {
-            ButtonAction::Save => { /* Save logic */ },
-            ButtonAction::Load => { /* Load logic */ },
-            ButtonAction::Exit => { /* Exit logic */ },
-            ButtonAction::ViewVertices => { 
-                println!("View Vertices button pressed");
-                if let Some(mesh_handle) = &selected.mesh {
-                    if let Some(mesh) = mesh_assests.get(mesh_handle) {
-                        let vertices = get_vertices(mesh);
-                        // create_vertex_dummies(commands, materials, meshes, &vertices);
-                    }
-                }
-             },
-        }
-    }
-}
+// fn handle_button_actions(
+//     mut commands: Commands,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     mut materials: ResMut<Assets<StandardMaterial>>,
+//     mut events: EventReader<ButtonAction>,
+//     selected: Res<SelectedMesh>,
+//     mesh_assests: Res<Assets<Mesh>>,
+// ) {
+//     for event in events.read() {
+//         match event {
+//             // ButtonAction::Save => { /* Save logic */ },
+//             // ButtonAction::Load => { /* Load logic */ },
+//             // ButtonAction::Exit => { /* Exit logic */ },
+//             ButtonAction::ViewVertices => { 
+//                 println!("View Vertices button pressed");
+//                 if let Some(mesh_handle) = &selected.mesh {
+//                     if let Some(mesh) = mesh_assests.get(mesh_handle) {
+//                         let vertices = get_vertices(mesh);
+//                         // create_vertex_dummies(commands, materials, meshes, &vertices);
+//                     }
+//                 }
+//              },
+//         }
+//     }
+// }
