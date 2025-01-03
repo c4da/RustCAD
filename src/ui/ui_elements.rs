@@ -121,13 +121,13 @@ pub fn button_highlight_system(
     }
 }
 
-// #[derive(Event)]
-// pub enum ButtonAction {
-//     Save,
-//     Load,
-//     Exit,
-//     ViewVertices,
-// }
+#[derive(Event)]
+pub enum ButtonAction {
+    Save,
+    Load,
+    Exit,
+    ViewVertices,
+}
 
 // // Component to identify button type
 // #[derive(Component)]
