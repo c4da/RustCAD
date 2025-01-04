@@ -1,5 +1,4 @@
 use bevy::picking::mesh_picking::ray_cast::ray_mesh_intersection;
-use bevy_mod_picking::prelude::*;
 use bevy::prelude::*;
 use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
 use crate::tools::tools::{create_vertex_dummies, get_vertices};
@@ -46,7 +45,7 @@ fn create_text_bundle(label: &str) -> (Text, TextFont, TextColor) {
 #[derive(Component,)]
 pub struct ToolbarButton;
 
-pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_ui(mut commands: Commands, ) {
     commands
             .spawn(
                 Node {
@@ -121,13 +120,13 @@ pub fn button_highlight_system(
     }
 }
 
-#[derive(Event)]
-pub enum ButtonAction {
-    Save,
-    Load,
-    Exit,
-    ViewVertices,
-}
+// #[derive(Event)]
+// pub enum ButtonAction {
+//     Save,
+//     Load,
+//     Exit,
+//     ViewVertices,
+// }
 
 // // Component to identify button type
 // #[derive(Component)]

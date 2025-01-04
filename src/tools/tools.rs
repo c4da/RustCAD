@@ -1,11 +1,11 @@
 
 //tools module
 use bevy::prelude::*;
-use bevy::render::mesh::{Mesh, SphereMeshBuilder, SphereKind};
-use bevy::pbr::{MaterialMeshBundle, StandardMaterial};
+use bevy::render::mesh::{Mesh, VertexAttributeValues};
+use bevy::pbr::{StandardMaterial};
 use std::collections::HashSet;
 
-use super::{colors, vec3_rounded::Vec3Rounded};
+use super::{colors, vec3_rounded::Vec3Rounded,};
 
 #[derive(Resource)]
 pub struct ToolResources {
@@ -17,7 +17,7 @@ pub struct ToolResources {
 method takes a ref of a Bevy mesh and returns a map of unique vertices
 */
 pub fn get_vertices(mesh: &Mesh) -> Vec<Vec3> {
-    let Some(bevy::render::mesh::VertexAttributeValues::Float32x3(raw_positions)) = 
+    let Some(VertexAttributeValues::Float32x3(raw_positions)) = 
         mesh.attribute(Mesh::ATTRIBUTE_POSITION)
     else {
         return vec![];

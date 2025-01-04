@@ -26,6 +26,19 @@ pub struct PanOrbitSettings {
     pub scroll_pixel_sensitivity: f32,
 }
 
+
+pub fn spawn_camera() -> PanOrbitCameraBundle {
+    let mut camera = PanOrbitCameraBundle::default();
+    // Position our camera using our component,
+    // not Transform (it would get overwritten)
+    camera.state.center = Vec3::new(0.0, 1.0, 0.0);  // Target point
+    camera.state.radius = 400.0;  // Distance from camera to target point
+    camera.state.pitch = -15.0f32.to_radians();  // Adjusted pitch to look downwards
+    camera.state.yaw = 0.0f32.to_radians(); // Adjusted yaw
+    return camera;
+}
+
+
 impl Default for PanOrbitSettings {
     fn default() -> Self {
         PanOrbitSettings {
