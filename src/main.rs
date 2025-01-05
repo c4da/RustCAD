@@ -2,13 +2,17 @@
 use std::f32::consts::PI;
 
 use bevy::{color::palettes::tailwind::*, picking::pointer::PointerInteraction, prelude::*};
+
+// inspector for debugging
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
+use part_components::create_3d_object_system;
 use tools::components::Shape;
 
 mod tools;
 mod ui;
 mod view;
+mod part_components;
 
 fn main() {
     App::new()
@@ -16,11 +20,15 @@ fn main() {
         .add_plugins((DefaultPlugins, MeshPickingPlugin))
         // .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, 
-            (setup_scene, ui::setup_ui,))
+        (setup_scene, 
+                ui::setup_ui,
+            ))
         .add_systems(Update, 
             (view::pan_orbit_camera
                 .run_if(any_with_component::<view::PanOrbitState>),
-                ui::button_highlight_system, draw_mesh_intersections, rotate,))
+                ui::button_highlight_system, 
+                draw_mesh_intersections, 
+                rotate,))
         .run();
 }
 
@@ -39,13 +47,13 @@ fn setup_scene(
     let hover_matl = materials.add(Color::from(CYAN_300));
     let pressed_matl = materials.add(Color::from(YELLOW_300));
 
-       // cube
-       commands.spawn((
+    // cube
+    commands.spawn((
         Mesh3d(meshes.add(Cuboid::new(10.0, 10.0, 10.0))),
         MeshMaterial3d(white_matl.clone()),
         // Transform::from_xyz(0.0, 0.5, 0.0),
         Transform::from_xyz(
-            0.0,
+            10.0,
             10.0,
             Z_EXTENT / 2.,
         ),
@@ -56,6 +64,19 @@ fn setup_scene(
     .observe(update_material_on::<Pointer<Down>>(pressed_matl.clone()))
     .observe(update_material_on::<Pointer<Up>>(hover_matl.clone()))
     .observe(rotate_on_drag);
+
+    let points = vec![
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        Vec3::new(0.0, 0.0, 1.0),
+        Vec3::new(1.0, 0.0, 1.0),
+        Vec3::new(1.0, 1.0, 1.0),
+        Vec3::new(0.0, 1.0, 1.0),
+    ];
+
+    create_3d_object_system(&mut commands, &mut meshes, &mut materials, points);
 
     // Ground
     commands.spawn((
