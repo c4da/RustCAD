@@ -1,30 +1,45 @@
 use bevy::prelude::*;
 use bevy::render::mesh::PrimitiveTopology;
 use bevy::asset::RenderAssetUsages;
-use crate::part_components::components::*;
+use super::components::*;
 use bevy::render::mesh::Indices;
+use crate::tools::colors::*;
+use super::mouse_part_systems::*;
 
 pub fn create_3d_object_system(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mut points: Vec<Vec3>,
+    points: Vec<Vec3>,
 ) {
 
-    let mut vertices = Vec::new();
-    // Define the vertices of the 3D object
-    for point in points.iter() {
-        vertices.push(Vertex { coordinates: point.clone() });
-    }
+    let no_change_matl = materials.add(NO_CHANGE_COLOR);
+    let hover_matl = materials.add(HOVER_COLOR);
+    let pressed_matl = materials.add(PRESSED_COLOR);
 
-    // Create edges between the vertices
-    let edges = vec![
-        (0, 1), (1, 2), (2, 3), (3, 0), // Bottom face
-        (4, 5), (5, 6), (6, 7), (7, 4), // Top face
-        (0, 4), (1, 5), (2, 6), (3, 7), // Side edges
-    ];
+    let vertices = points_to_vertices(&points);
 
+    let edges = create_edges_from_vertices(&vertices);
+    // Spawn the mesh and material as a PbrBundle
+    commands.spawn((
+        Mesh3d(meshes.add(create_mesh_for_object(points))),
+        MeshMaterial3d(materials.add(Color::WHITE)),
+        Transform::from_xyz(0.0, 0.5, 0.0),
+        Part {
+            vertices: vertices.clone(),
+            edges: create_edges_from_vertices(&vertices).clone(),
+            faces: create_faces_from_edges(&edges).clone(),
+        },
+        )   
+    )
+    .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
+    .observe(update_material_on::<Pointer<Out>>(no_change_matl.clone()))
+    .observe(update_material_on::<Pointer<Down>>(pressed_matl.clone()))
+    .observe(update_material_on::<Pointer<Up>>(hover_matl.clone()))
+    .observe(rotate_on_drag);
+}
 
+fn create_mesh_for_object(points: Vec<Vec3>) -> Mesh {
     // Create a mesh for the 3D object
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points.clone());
@@ -36,28 +51,20 @@ pub fn create_3d_object_system(
         2, 3, 7, 7, 6, 2,
         3, 0, 4, 4, 7, 3,
     ]));
-
-    // Create a material for the 3D object
-    let material = materials.add(StandardMaterial {
-        base_color: Color::rgb(0.8, 0.7, 0.6),
-        ..Default::default()
-    });
-
-    let edges = create_edges_from_vertices(&vertices);
-    // Spawn the mesh and material as a PbrBundle
-    commands.spawn((
-        Mesh3d(meshes.add(mesh)),
-        MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::from_xyz(0.0, 0.5, 0.0),
-        Part {
-            vertices: vertices.clone(),
-            edges: create_edges_from_vertices(&vertices).clone(),
-            faces: create_faces_from_edges(&edges).clone(),
-        },
-        )   
-    );
+    return mesh;
 }
 
+fn points_to_vertices(points: &Vec<Vec3>) -> Vec<Vertex> {
+    let mut vertices = Vec::new();
+    for point in points.iter() {
+        vertices.push(point_to_vertex(point.clone()));
+    }
+    vertices
+}
+
+fn point_to_vertex(point: Vec3) -> Vertex {
+    Vertex { coordinates: point }
+}
 
 // Algorithm to create edges from vertices
 fn create_edges_from_vertices(vertices: &[Vertex]) -> Vec<Edge> {
