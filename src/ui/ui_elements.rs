@@ -1,5 +1,6 @@
 use bevy::picking::mesh_picking::ray_cast::ray_mesh_intersection;
 use bevy::prelude::*;
+use bevy::utils::warn;
 use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
 use crate::tools::tools::{create_vertex_dummies, get_vertices};
 
@@ -42,6 +43,17 @@ fn create_text_bundle(label: &str) -> (Text, TextFont, TextColor) {
     )
 }
 
+fn create_shape_bundle(label: &str) -> (Text, TextFont, TextColor) {
+    (
+        Text::new(label),
+        TextFont {
+            font_size: TEXT_SIZE,
+            ..default()
+        },
+        TextColor(TEXT_COLOR),
+    )
+}
+
 #[derive(Component,)]
 pub struct ToolbarButton;
 
@@ -66,7 +78,27 @@ pub fn setup_ui(mut commands: Commands, ) {
             setup_toolbar(parent);
     });
 
+    commands.spawn(Node {
+        position_type: PositionType::Absolute,
+        width: Val::Px(80.0),
+        height: Val::Percent(100.0),
+        right: Val::Px(0.0),
+        margin: UiRect { left: Val::Px(0.0), right: Val::Px(10.0), top: Val::Px(0.0), bottom: Val::Px(0.0) },
+        flex_direction: FlexDirection::Column,
+        border: UiRect { left: Val::Px(1.0), right: Val::Px(1.0), top: Val::Px(1.0), bottom: Val::Px(1.0) },
+        ..Default::default()
+    })
+        .with_children(|parent| {
+            setup_shapes(parent);
+    });
+
 }
+fn setup_shapes(parent: &mut ChildBuilder) {
+    parent
+        .spawn((create_button_bundle(), ToolbarButton))
+        .with_child(create_shape_bundle("Box"));
+}
+
 
 // Usage in your setup function
 fn setup_toolbar(parent: &mut ChildBuilder) {
@@ -95,6 +127,9 @@ pub fn button_highlight_system(
         (Changed<Interaction>, With<Button>),
     >,
     mut text_query: Query<&mut Text>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for (interaction, 
         mut color, 
@@ -105,6 +140,14 @@ pub fn button_highlight_system(
                 // **text = "Press".to_string();
                 *color = PRESSED_BUTTON.into();
                 border_color.0 = RED.into();
+                //Result::Err("xx")
+                warn(Result::Err(_text));
+
+                let mut _text = text_query.get_mut(children[0]).unwrap();
+                //**_text.contains("Box")
+                if _text.contains("Box") {
+                    add_box(&mut commands, &mut meshes, &mut materials);
+                }
             }
             Interaction::Hovered => {
                 // **text = "Hover".to_string();
@@ -120,6 +163,28 @@ pub fn button_highlight_system(
     }
 }
 
+use crate::part;
+
+fn add_box(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,) {
+    warn(Result::Err("Adding box"));
+
+
+    let points = vec![
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(2.0, 0.0, 0.0),
+        Vec3::new(2.0, 2.0, 0.0),
+        Vec3::new(0.0, 2.0, 0.0),
+        Vec3::new(0.0, 0.0, 2.0),
+        Vec3::new(2.0, 0.0, 2.0),
+        Vec3::new(2.0, 2.0, 2.0),
+        Vec3::new(0.0, 2.0, 2.0),
+    ];
+
+    part::create_3d_object_system(commands, meshes, materials, points);
+}
 // #[derive(Event)]
 // pub enum ButtonAction {
 //     Save,
