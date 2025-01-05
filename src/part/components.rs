@@ -71,7 +71,7 @@ impl Face {
     }
 }
 
-#[derive(Component, Debug, Resource)]
+#[derive(Component, Debug, Resource, Clone)]
 pub struct ExtrusionParams {
     pub direction: Vec3,
     pub distance: f32,

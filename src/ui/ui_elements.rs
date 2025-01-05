@@ -1,18 +1,26 @@
-use bevy::picking::mesh_picking::ray_cast::ray_mesh_intersection;
 use bevy::prelude::*;
+use bevy::ui::widget::*;
+use crate::part::components::*; // Import the Vertex component
 use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
 use crate::tools::tools::{create_vertex_dummies, get_vertices};
 
-const BUTTON_WIDTH: f32 = 80.0;
+// UI Constants
+const BUTTON_WIDTH: f32 = 120.0;
 const BUTTON_HEIGHT: f32 = 30.0;
 const BUTTON_MARGIN: f32 = 5.0;
 const TEXT_SIZE: f32 = 16.0;
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
+const TOOLBAR_WIDTH: f32 = 150.0;
+const TOOLBAR_BG: Color = Color::srgb(0.2, 0.2, 0.2);
 
-#[derive(Resource)]
-pub struct SelectedMesh{
-    entity: Option<Entity>,
-    mesh: Option<Handle<Mesh>>,
+// Button types for different CAD operations
+#[derive(Component)]
+pub enum ToolbarButtonType {
+    Extrude,
+    CreateVertex,
+    CreateEdge,
+    CreateFace,
+    Delete,
 }
 
 fn create_button_bundle() -> (Button, Node, BackgroundColor, BorderColor) {
@@ -45,9 +53,11 @@ fn create_text_bundle(label: &str) -> (Text, TextFont, TextColor) {
 #[derive(Component,)]
 pub struct ToolbarButton;
 
-pub fn setup_ui(mut commands: Commands, ) {
+pub fn setup_ui(mut commands: Commands) {
+
+    // Top toolbar (keeping existing one)
     commands
-            .spawn(
+        .spawn(
                 Node {
                 position_type: PositionType::Absolute,
                 width: Val::Percent(100.0),
@@ -63,25 +73,43 @@ pub fn setup_ui(mut commands: Commands, ) {
                 ..Default::default()
             })
         .with_children(|parent| {
-            setup_toolbar(parent);
-    });
+            setup_top_toolbar(parent);
+        });
 
+    // Side toolbar (new)
+    commands
+    .spawn(
+        Node {
+        position_type: PositionType::Absolute,
+        width: Val::Px(TOOLBAR_WIDTH),
+        height: Val::Percent(100.0),
+        margin: UiRect {
+                left: Val::Px(0.0),
+                right: Val::Percent(10.),
+                top: Val::Px(40.0),
+                ..Default::default()
+                },
+        // padding: UiRect::all(Val::Px(5.0)),
+        flex_direction: FlexDirection::Column,
+        padding: UiRect::all(Val::Px(10.0)),
+        ..Default::default()
+    }).with_children(|parent| {
+            setup_side_toolbar(parent);
+        });
 }
 
-// Usage in your setup function
-fn setup_toolbar(parent: &mut ChildBuilder) {
+fn setup_top_toolbar(parent: &mut ChildBuilder) {
     parent
         .spawn((create_button_bundle(), ToolbarButton))
         .with_child(create_text_bundle("File"));
-    
     
     parent
         .spawn((create_button_bundle(), ToolbarButton))
         .with_child(create_text_bundle("Edit"));
 
     parent
-    .spawn((create_button_bundle(), ToolbarButton))
-    .with_child(create_text_bundle("View Vertices"));
+        .spawn((create_button_bundle(), ToolbarButton))
+        .with_child(create_text_bundle("View"));
 }
 
 pub fn button_highlight_system(
@@ -115,6 +143,84 @@ pub fn button_highlight_system(
                 // **text = "Button".to_string();
                 *color = NORMAL_BUTTON.into();
                 border_color.0 = Color::BLACK;
+            }
+        }
+    }
+}
+
+fn setup_side_toolbar(parent: &mut ChildBuilder) {
+    // CAD Operation buttons
+    spawn_tool_button(parent, "Extrude", ToolbarButtonType::Extrude);
+    spawn_tool_button(parent, "Add Vertex", ToolbarButtonType::CreateVertex);
+    spawn_tool_button(parent, "Add Edge", ToolbarButtonType::CreateEdge);
+    spawn_tool_button(parent, "Create Face", ToolbarButtonType::CreateFace);
+    spawn_tool_button(parent, "Delete", ToolbarButtonType::Delete);
+}
+
+fn spawn_tool_button(parent: &mut ChildBuilder, label: &str, button_type: ToolbarButtonType) {
+    parent
+        .spawn((
+            create_button_bundle(),
+            ToolbarButton,
+            button_type,
+        ))
+        .with_child(create_text_bundle(label));
+}
+
+#[derive(Event)]
+pub enum ToolbarAction {
+    Extrude,
+    CreateVertex,
+    CreateEdge,
+    CreateFace,
+    Delete,
+}
+
+pub fn button_action_system(
+    mut interaction_query: Query<
+        (&Interaction, &ToolbarButtonType),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut button_events: EventWriter<ToolbarAction>,
+) {
+    for (interaction, button_type) in &mut interaction_query {
+        if *interaction == Interaction::Pressed {
+            let action = match button_type {
+                ToolbarButtonType::Extrude => ToolbarAction::Extrude,
+                ToolbarButtonType::CreateVertex => ToolbarAction::CreateVertex,
+                ToolbarButtonType::CreateEdge => ToolbarAction::CreateEdge,
+                ToolbarButtonType::CreateFace => ToolbarAction::CreateFace,
+                ToolbarButtonType::Delete => ToolbarAction::Delete,
+            };
+            button_events.send(action);
+        }
+    }
+}
+
+pub fn handle_toolbar_actions(
+    mut events: EventReader<ToolbarAction>,
+    mut query: Query<&mut Part>,
+    mut extrusion_params: ResMut<ExtrusionParams>,
+) {
+    for event in events.read() {
+        match event {
+            ToolbarAction::Extrude => {
+                let mut params = extrusion_params.clone();
+                // test extrusion parameters
+                params.direction = Vec3::Y;
+                params.distance = 1.0;
+            },
+            ToolbarAction::CreateVertex => {
+                // Handle vertex creation
+            }
+            ToolbarAction::CreateEdge => {
+                // Handle edge creation
+            }
+            ToolbarAction::CreateFace => {
+                // Handle face creation
+            }
+            ToolbarAction::Delete => {
+                // Handle deletion
             }
         }
     }
