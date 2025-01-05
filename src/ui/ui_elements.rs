@@ -1,10 +1,9 @@
 use bevy::prelude::*;
-<<<<<<< HEAD
 use bevy::utils::warn;
-=======
 use bevy::ui::widget::*;
 use crate::part::components::*; // Import the Vertex component
->>>>>>> origin/master
+
+use crate::part;
 use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
 use crate::tools::tools::{create_vertex_dummies, get_vertices};
 
@@ -197,9 +196,6 @@ pub fn button_highlight_system(
     }
 }
 
-<<<<<<< HEAD
-use crate::part;
-
 fn add_box(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -220,7 +216,7 @@ fn add_box(
 
     part::create_3d_object_system(commands, meshes, materials, points);
 }
-=======
+
 fn setup_side_toolbar(parent: &mut ChildBuilder) {
     // CAD Operation buttons
     spawn_tool_button(parent, "Extrude", ToolbarButtonType::Extrude);
@@ -299,7 +295,6 @@ pub fn handle_toolbar_actions(
     }
 }
 
->>>>>>> origin/master
 // #[derive(Event)]
 // pub enum ButtonAction {
 //     Save,
