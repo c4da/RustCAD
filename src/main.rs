@@ -47,9 +47,12 @@ fn setup_scene(
 
     part::create_3d_object_system(&mut commands, &mut meshes, &mut materials, points);
     let no_change_matl = materials.add(colors::NO_CHANGE_COLOR);
+    part::create_3d_object_system(&mut commands, &mut meshes, &mut materials, points);
+    let no_change_matl = materials.add(colors::NO_CHANGE_COLOR);
     // Ground
     commands.spawn((
         Mesh3d(meshes.add(Plane3d::default().mesh().size(50.0, 50.0).subdivisions(10))),
+        MeshMaterial3d(no_change_matl.clone()),
         MeshMaterial3d(no_change_matl.clone()),
         PickingBehavior::IGNORE, // Disable picking for the ground plane.
     ));
