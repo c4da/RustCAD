@@ -1,6 +1,7 @@
 
-use bevy::{prelude::*};
+use bevy::prelude::*;
 use tools::colors;
+
 
 // inspector for debugging
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -32,6 +33,7 @@ fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>, 
 ) {
 
     let points = vec![
@@ -87,4 +89,14 @@ fn setup_scene(
             ..default()
         },
     ));
+
+    commands.spawn((
+        AudioPlayer::new(
+        asset_server.load("resources/V-Background.ogg")
+        ),
+        PlaybackSettings {
+            mode: bevy::audio::PlaybackMode::Loop,
+            ..default()
+        },)
+    );
 }
