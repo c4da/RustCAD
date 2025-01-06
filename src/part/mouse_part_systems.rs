@@ -1,6 +1,6 @@
 use bevy::{color::palettes::tailwind::*, picking::pointer::PointerInteraction, prelude::*};
 use crate::tools::components::Shape;
-
+use super::components::{Face, Part};
 
 // Returns an observer that updates the entity's material and provides access to its mesh.
 pub fn update_material_on<E>(
@@ -10,11 +10,29 @@ pub fn update_material_on<E>(
     // versions of this observer, each triggered by a different event and with a different hardcoded
     // material. Instead, the event type is a generic, and the material is passed in.
     move |trigger, mut query| {
+        // The query accesses entities with both MeshMaterial3d<StandardMaterial> and Mesh3d components
         if let Ok((mut material, mesh)) = query.get_mut(trigger.entity()) {
+            // `material` is a mutable reference to the MeshMaterial3d<StandardMaterial> component
+            // `mesh` is an immutable reference to the Mesh3d component
             material.0 = new_material.clone();
             println!("Clicked mesh: {:?}", mesh.0);
             // Now you have access to mesh.0 which is the Handle<Mesh> of the clicked object
             // You can use this to work with the mesh data
+        }
+    }
+}
+
+pub fn face_selection<E>(
+    new_material: Handle<StandardMaterial>,
+) -> impl Fn(Trigger<E>, Query<(&mut MeshMaterial3d<StandardMaterial>, &Face)>) {
+    move |trigger, mut face_query| {
+        if let Ok((mut material, face)) = face_query.get_mut(trigger.entity()) {
+            material.0 = new_material.clone();
+            println!("Clicked face: {:?}", face.get_vertices());
+            // The Face component already contains a reference to its Part
+            let mut part = face.part.clone();
+            part.selected_faces.clear();
+            part.selected_faces.push(face.clone());
         }
     }
 }

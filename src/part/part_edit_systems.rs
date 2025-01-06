@@ -6,6 +6,24 @@ use bevy::render::mesh::Indices;
 use crate::tools::colors::*;
 use super::mouse_part_systems::*;
 
+fn create_mesh_for_face(vertices: &[Vec3]) -> Mesh {
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+    
+    // Convert quad vertices to two triangles
+    let positions = vertices.to_vec();
+    let indices = vec![0, 1, 2, 2, 3, 0];
+    
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_indices(Indices::U32(indices));
+    
+    // Calculate normal for the face
+    let normal = calculate_face_normal(vertices);
+    let normals: Vec<[f32; 3]> = vec![[normal.x, normal.y, normal.z]; 4];
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    
+    mesh
+}
+
 pub fn create_3d_object_system(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -20,23 +38,53 @@ pub fn create_3d_object_system(
     let edges = create_edges_from_vertices(&vertices);
     let faces = create_faces_from_edges(&edges);
 
-    // Spawn the mesh and material as a PbrBundle
+    // Create parent entity with Part component
     let mut part = Part::new();
     part.vertices = vertices.clone();
     part.edges = edges.clone();
     part.faces = faces.clone();
 
-    commands.spawn((
-        Mesh3d(meshes.add(create_mesh_for_object(points))),
-        MeshMaterial3d(materials.add(Color::WHITE)),
+    let parent = commands.spawn((
         Transform::from_xyz(0.0, 0.5, 0.0),
         part,
-    ))
-    .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
-    .observe(update_material_on::<Pointer<Out>>(no_change_matl.clone()))
-    .observe(update_material_on::<Pointer<Down>>(pressed_matl.clone()))
-    .observe(update_material_on::<Pointer<Up>>(hover_matl.clone()))
-    .observe(rotate_on_drag);
+    )).id();
+
+    // Define face vertices for each face of the cube
+    let face_vertices = vec![
+        // Front face
+        vec![points[0], points[1], points[2], points[3]],
+        // Back face
+        vec![points[4], points[5], points[6], points[7]],
+        // Right face
+        vec![points[1], points[2], points[6], points[5]],
+        // Left face
+        vec![points[0], points[3], points[7], points[4]],
+        // Top face
+        vec![points[3], points[2], points[6], points[7]],
+        // Bottom face
+        vec![points[0], points[1], points[5], points[4]],
+    ];
+
+    // Spawn each face as a separate entity
+    for (i, vertices) in face_vertices.iter().enumerate() {
+        let face = faces[i].clone();
+        commands.spawn((
+            Mesh3d(meshes.add(create_mesh_for_face(vertices))),
+            MeshMaterial3d(materials.add(Color::WHITE)),
+            Transform::from_xyz(0.0, 0.5, 0.0),
+            face,
+        ))
+        .set_parent(parent)
+        .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
+        .observe(update_material_on::<Pointer<Out>>(no_change_matl.clone()))
+        .observe(update_material_on::<Pointer<Down>>(pressed_matl.clone()))
+        .observe(update_material_on::<Pointer<Up>>(hover_matl.clone()))
+        .observe(face_selection::<Pointer<Down>>(pressed_matl.clone()));
+    }
+
+    // Add rotation to parent entity
+    commands.entity(parent)
+        .observe(rotate_on_drag);
 }
 
 fn create_mesh_for_object(points: Vec<Vec3>) -> Mesh {
@@ -88,24 +136,45 @@ fn calculate_face_normal(vertices: &[Vec3]) -> Vec3 {
 fn create_faces_from_edges(edges: &Vec<Edge>) -> Vec<Face> {
     let mut faces = Vec::new();
     
-    // Define face configurations
+    // Define face configurations for all six faces
     let face_configs = vec![
-        // Bottom face
+        // Front face (0,1,2,3)
         (vec![0, 1, 2, 3], vec![
             edges[0].start.coordinates,
             edges[1].start.coordinates,
             edges[2].start.coordinates,
             edges[3].start.coordinates,
         ]),
-        // Top face
+        // Back face (4,5,6,7)
         (vec![4, 5, 6, 7], vec![
             edges[4].start.coordinates,
             edges[5].start.coordinates,
             edges[6].start.coordinates,
             edges[7].start.coordinates,
         ]),
-        // Front face
-        (vec![8, 9, 10, 11], vec![
+        // Right face (1,2,6,5)
+        (vec![1, 2, 10, 9], vec![
+            edges[1].start.coordinates,
+            edges[2].start.coordinates,
+            edges[6].start.coordinates,
+            edges[5].start.coordinates,
+        ]),
+        // Left face (0,3,7,4)
+        (vec![0, 3, 11, 8], vec![
+            edges[0].start.coordinates,
+            edges[3].start.coordinates,
+            edges[7].start.coordinates,
+            edges[4].start.coordinates,
+        ]),
+        // Top face (3,2,6,7)
+        (vec![2, 3, 11, 10], vec![
+            edges[2].start.coordinates,
+            edges[3].start.coordinates,
+            edges[7].start.coordinates,
+            edges[6].start.coordinates,
+        ]),
+        // Bottom face (0,1,5,4)
+        (vec![0, 1, 9, 8], vec![
             edges[0].start.coordinates,
             edges[1].start.coordinates,
             edges[5].start.coordinates,
