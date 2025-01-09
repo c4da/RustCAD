@@ -51,16 +51,16 @@ pub fn create_3d_object_system(
 
     // Define face vertices for each face of the cube
     let face_vertices = vec![
-        // Front face
-        vec![points[0], points[1], points[2], points[3]],
         // Back face
+        vec![points[3], points[2], points[1], points[0]],
+        // Front face
         vec![points[4], points[5], points[6], points[7]],
         // Right face
         vec![points[1], points[2], points[6], points[5]],
         // Left face
-        vec![points[0], points[3], points[7], points[4]],
+        vec![points[4], points[7], points[3], points[0]],
         // Top face
-        vec![points[3], points[2], points[6], points[7]],
+        vec![points[7], points[6], points[2], points[3]],
         // Bottom face
         vec![points[0], points[1], points[5], points[4]],
     ];
