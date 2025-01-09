@@ -62,20 +62,27 @@ pub struct Face {
     pub vertices: Vec<Vertex>,
     pub edges: Vec<Edge>,
     pub normal: Vec3,
-    pub part: Part,
 }
 
 impl Face {
     pub fn get_vertices(&self) -> Vec<Vertex> {
         self.vertices.clone()
     }
+
+    pub fn copy(&self) -> Self {
+        Face {
+            vertices: self.vertices.clone(),
+            edges: self.edges.clone(),
+            normal: self.normal.clone(),
+        }
+    }
 }
 
-#[derive(Component, Debug, Resource, Clone)]
+#[derive(Debug, Resource, Clone, Event)]
 pub struct ExtrusionParams {
     pub direction: Vec3,
     pub distance: f32,
-    pub selected_faces: Vec<usize>,
+    // pub selected_faces: Vec<usize>,
 }
 
 /// A marker component
@@ -102,22 +109,19 @@ impl Part {
     }
 
     pub fn with_points(points: Vec<Vec3>) -> Self {
-        let mut part = Part {
+        Part {
             vertices: Vertex::points_to_vertices(&points),
             edges: Vec::new(),
             faces: Vec::new(),
             selected_vertices: Vec::new(),
             selected_edges: Vec::new(),
             selected_faces: Vec::new(),
-        };
-        part.assign_faces_to_part();
-        part
-    }
-
-    fn assign_faces_to_part(&mut self) {
-        let cloned_part: Part = self.clone();
-        for face in &mut self.faces {
-            face.part = cloned_part.clone();
         }
     }
 }
+
+#[derive(Component)]
+pub struct FaceSelection;
+
+#[derive(Component)]
+pub struct PartSelection;

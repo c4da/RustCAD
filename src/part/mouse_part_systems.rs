@@ -24,15 +24,18 @@ pub fn update_material_on<E>(
 
 pub fn face_selection<E>(
     new_material: Handle<StandardMaterial>,
-) -> impl Fn(Trigger<E>, Query<(&mut MeshMaterial3d<StandardMaterial>, &Face)>) {
-    move |trigger, mut face_query| {
-        if let Ok((mut material, face)) = face_query.get_mut(trigger.entity()) {
+) -> impl Fn(Trigger<E>, (Query<(&mut MeshMaterial3d<StandardMaterial>, &Face, &Parent)>, Query<&mut Part>)) {
+    move |trigger, (mut face_query, mut part_query)| {
+        if let Ok((mut material, face, parent)) = face_query.get_mut(trigger.entity()) {
             material.0 = new_material.clone();
             println!("Clicked face: {:?}", face.get_vertices());
-            // The Face component already contains a reference to its Part
-            let mut part = face.part.clone();
-            part.selected_faces.clear();
-            part.selected_faces.push(face.clone());
+            
+            // Get the actual Part component from the parent entity
+            if let Ok(mut part) = part_query.get_mut(parent.get()) {
+                part.selected_faces.clear();
+                part.selected_faces.push(face.clone());
+                println!("Selected faces: {:?}", part.selected_faces);
+            }
         }
     }
 }

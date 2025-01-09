@@ -1,20 +1,26 @@
-
-use bevy::prelude::*;
-use tools::colors;
-
-
-// inspector for debugging
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
-
 mod tools;
 mod ui;
 mod view;
 mod part;
 
+use bevy::prelude::*;
+use tools::colors;
+use part::components::ExtrusionParams;
+use ui::ui_elements::ToolbarAction;
+// use part::components::ExtrusionParams;
+
+// inspector for debugging
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
+
 fn main() {
     App::new()
         // MeshPickingPlugin is not a default plugin
         .add_plugins((DefaultPlugins, MeshPickingPlugin))
+        .add_event::<ToolbarAction>()
+        .insert_resource(ExtrusionParams {
+            direction: Vec3::Y,
+            distance: 1.0,
+        })
         // .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, 
         (setup_scene, 
@@ -25,7 +31,9 @@ fn main() {
                 .run_if(any_with_component::<view::PanOrbitState>),
                 ui::button_highlight_system, 
                 part::draw_mesh_intersections, 
-                part::rotate,))
+                part::rotate,
+                ui::button_action_system,
+                ui::handle_toolbar_actions,))
         .run();
 }
 
@@ -90,13 +98,13 @@ fn setup_scene(
         },
     ));
 
-    commands.spawn((
-        AudioPlayer::new(
-        asset_server.load("resources/V-Background.ogg")
-        ),
-        PlaybackSettings {
-            mode: bevy::audio::PlaybackMode::Loop,
-            ..default()
-        },)
-    );
+    // commands.spawn((
+    //     AudioPlayer::new(
+    //     asset_server.load("resources/V-Background.ogg")
+    //     ),
+    //     PlaybackSettings {
+    //         mode: bevy::audio::PlaybackMode::Loop,
+    //         ..default()
+    //     },)
+    // );
 }
