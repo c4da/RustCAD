@@ -4,7 +4,7 @@ use crate::part::components::*; // Import the Vertex component
 
 use crate::part;
 use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
-use crate::tools::tools::{create_vertex_dummies, get_vertices};
+use crate::tools::mesh_tools::{get_vertices, create_vertex_dummies};
 
 // UI Constants
 const BUTTON_WIDTH: f32 = 120.0;

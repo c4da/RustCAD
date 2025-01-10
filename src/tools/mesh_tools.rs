@@ -1,8 +1,11 @@
 
 //tools module
-use bevy::prelude::*;
-use bevy::render::mesh::{Mesh, VertexAttributeValues};
-use bevy::pbr::{StandardMaterial};
+use bevy::{
+    picking::pointer::PointerInteraction, 
+    prelude::*,
+    pbr::StandardMaterial,
+    render::mesh::{Mesh, VertexAttributeValues},
+};
 use std::collections::HashSet;
 
 use super::{colors, vec3_rounded::Vec3Rounded,};
@@ -53,3 +56,15 @@ pub fn create_vertex_dummies(mut commands: Commands, mut materials: ResMut<Asset
         ));        
     }
 }
+
+
+// A system that draws hit indicators for every pointer. 
+// to do get this working
+// pub fn transform_mouse_pointer_to_vect<'a>(
+//     pointers: &'a Query<&PointerInteraction>
+// ) -> impl Iterator<Item = (bevy::prelude::Vec3, bevy::prelude::Vec3)> + 'a + use<'a, '_> {
+//     pointers
+//         .iter()
+//         .filter_map(|interaction| interaction.get_nearest_hit())
+//         .filter_map(|(_entity, hit)| hit.position.zip(hit.normal))
+// }

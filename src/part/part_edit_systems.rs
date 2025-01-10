@@ -204,18 +204,24 @@ fn create_faces_from_edges(edges: &Vec<Edge>) -> Vec<Face> {
 
 pub fn extrude_faces(
     part: &mut Part,
-    extrusion_vector: Vec3,
+    // extrusion_vector: Vec3,
+    extrusion_params: &ExtrusionParams,
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     parent_entity: Entity,
 ) {
+    let no_change_matl = materials.add(NO_CHANGE_COLOR);
+    let hover_matl = materials.add(HOVER_COLOR);
+    let pressed_matl = materials.add(PRESSED_COLOR);
+
     let mut new_vertices = Vec::new();
     let mut new_edges = Vec::new();
     let mut new_faces = Vec::new();
 
     // Create new vertices by extruding the existing vertices of the selected faces
     for face in &part.selected_faces {
+        let extrusion_vector = face.normal * extrusion_params.distance;
         let mut face_new_vertices = Vec::new();
         let mut face_vertices_coords = Vec::new();
 
@@ -266,8 +272,13 @@ pub fn extrude_faces(
             MeshMaterial3d(materials.add(Color::WHITE)),
             Transform::from_xyz(0.0, 0.5, 0.0),
             extruded_face,
-        ))
-        .set_parent(parent_entity);
+        )).set_parent(parent_entity)
+        .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
+        .observe(update_material_on::<Pointer<Out>>(no_change_matl.clone()))
+        .observe(update_material_on::<Pointer<Down>>(pressed_matl.clone()))
+        .observe(update_material_on::<Pointer<Up>>(hover_matl.clone()))
+        .observe(face_selection::<Pointer<Down>>(pressed_matl.clone()));
+    
 
         // Create and spawn side faces
         for i in 0..face.vertices.len() {
@@ -305,7 +316,12 @@ pub fn extrude_faces(
                 Transform::from_xyz(0.0, 0.5, 0.0),
                 side_face,
             ))
-            .set_parent(parent_entity);
+            .set_parent(parent_entity)
+            .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
+            .observe(update_material_on::<Pointer<Out>>(no_change_matl.clone()))
+            .observe(update_material_on::<Pointer<Down>>(pressed_matl.clone()))
+            .observe(update_material_on::<Pointer<Up>>(hover_matl.clone()))
+            .observe(face_selection::<Pointer<Down>>(pressed_matl.clone()));
         }
     }
 

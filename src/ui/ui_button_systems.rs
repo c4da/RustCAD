@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+// use crate::tools::tools::{transform_mouse_pointer_to_vect};
+
+use bevy::{picking::pointer::PointerInteraction, prelude::*};
 use bevy::utils::warn;
 
 use super::ui_elements::*;
@@ -87,6 +89,15 @@ pub fn handle_toolbar_actions(
         match event {
             ToolbarAction::Extrude => {
                 let mut params = extrusion_params.clone();
+                
+                // for (_point, normal) in pointers
+                //                         .iter()
+                //                         .filter_map(|interaction| interaction.get_nearest_hit())
+                //                         .filter_map(|(_entity, hit)| hit.position.zip(hit.normal)) {
+                //     println!("Point: {:?}, Normal: {:?}", _point, normal);
+                //     params.direction = normal.normalize();
+                // };
+
                 // test extrusion parameters
                 params.direction = Vec3::Y;
                 params.distance = 1.0;
@@ -98,8 +109,8 @@ pub fn handle_toolbar_actions(
                         continue;
                     }
                     // Handle extrusion
-                    let extrusion_vector = params.direction * params.distance;
-                    part::extrude_faces(&mut part, extrusion_vector, &mut commands, &mut meshes, &mut materials, entity);
+                    // let extrusion_vector = params.direction * params.distance;
+                    part::extrude_faces(&mut part, &params, &mut commands, &mut meshes, &mut materials, entity);
                     part.selected_faces.clear();
                 }
             },

@@ -1,5 +1,5 @@
 use bevy::{color::palettes::tailwind::*, picking::pointer::PointerInteraction, prelude::*};
-use crate::tools::components::Shape;
+use crate::tools::{components::Shape};
 use super::components::{Face, Part};
 
 // Returns an observer that updates the entity's material and provides access to its mesh.
