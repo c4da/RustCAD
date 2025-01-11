@@ -8,6 +8,7 @@ use tools::colors;
 use part::components::ExtrusionParams;
 use ui::ui_elements::ToolbarAction;
 // use part::components::ExtrusionParams;
+use part::mouse_part_systems::{handle_face_selection, update_material_on};
 
 // inspector for debugging
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -31,6 +32,8 @@ fn main() {
                 .run_if(any_with_component::<view::PanOrbitState>),
                 ui::button_highlight_system, 
                 part::draw_mesh_intersections, 
+                part::handle_face_selection,
+                part::update_materials_system,
                 part::rotate,
                 ui::button_action_system,
                 ui::handle_toolbar_actions,))
