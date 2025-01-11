@@ -6,9 +6,9 @@ mod part;
 use bevy::prelude::*;
 use tools::colors;
 use part::components::ExtrusionParams;
-use ui::ui_elements::ToolbarAction;
+use ui::{ui_elements::ToolbarAction, EditorMode};
 // use part::components::ExtrusionParams;
-use part::mouse_part_systems::{handle_face_selection, update_material_on};
+use part::mouse_part_systems::{handle_face_selection, update_materials_system};
 
 // inspector for debugging
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -22,6 +22,7 @@ fn main() {
             direction: Vec3::Y,
             distance: 1.0,
         })
+        .init_resource::<EditorMode>()
         // .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, 
         (setup_scene, 
@@ -36,7 +37,8 @@ fn main() {
                 part::update_materials_system,
                 part::rotate,
                 ui::button_action_system,
-                ui::handle_toolbar_actions,))
+                ui::handle_toolbar_actions,
+                ui::update_selection_mode_buttons,))
         .run();
 }
 

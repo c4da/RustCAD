@@ -1,13 +1,14 @@
 // use crate::tools::tools::{transform_mouse_pointer_to_vect};
 
-use bevy::{picking::pointer::PointerInteraction, prelude::*};
+use bevy::prelude::*;
 use bevy::utils::warn;
 
 use super::ui_elements::*;
 use crate::part::components::*;
 
 use crate::part;
-use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
+use crate::tools::colors::{PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
+use crate::ui::components::*;
 
 pub fn button_highlight_system(
     mut interaction_query: Query<
@@ -56,23 +57,62 @@ pub fn button_highlight_system(
     }
 }
 
+// Add resource to track current mode
+#[derive(Resource, PartialEq)]
+pub enum EditorMode {
+    SelectFace,
+    SelectEdge,
+}
+
+impl Default for EditorMode {
+    fn default() -> Self {
+        EditorMode::SelectFace  // Default to select mode
+    }
+}
+
 pub fn button_action_system(
     mut interaction_query: Query<
-        (&Interaction, &ToolbarButtonType),
+        (&Interaction, &ToolbarButtonType, Option<&mut ToggleableButton>),
         (Changed<Interaction>, With<Button>),
     >,
     mut button_events: EventWriter<ToolbarAction>,
+    mut mode: ResMut<EditorMode>,
 ) {
-    for (interaction, button_type) in &mut interaction_query {
+    for (interaction, button_type, toggleable) in &mut interaction_query {
         if *interaction == Interaction::Pressed {
-            let action = match button_type {
-                ToolbarButtonType::Extrude => ToolbarAction::Extrude,
-                ToolbarButtonType::CreateVertex => ToolbarAction::CreateVertex,
-                ToolbarButtonType::CreateEdge => ToolbarAction::CreateEdge,
-                ToolbarButtonType::CreateFace => ToolbarAction::CreateFace,
-                ToolbarButtonType::Delete => ToolbarAction::Delete,
-            };
-            button_events.send(action);
+            match button_type {
+                ToolbarButtonType::SelectEdgeMode | ToolbarButtonType::SelectFaceMode => {
+                    if let Some(mut toggle) = toggleable {
+                        match button_type {
+                            ToolbarButtonType::SelectEdgeMode => {
+                                *mode = EditorMode::SelectEdge;
+                                button_events.send(ToolbarAction::SelectEdgeMode);
+                            }
+                            ToolbarButtonType::SelectFaceMode => {
+                                *mode = EditorMode::SelectFace;
+                                button_events.send(ToolbarAction::SelectFaceMode);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                ToolbarButtonType::Extrude => {
+                    println!("Extrude button pressed"); // Debug print
+                    button_events.send(ToolbarAction::Extrude);
+                }
+                ToolbarButtonType::CreateVertex => {
+                    button_events.send(ToolbarAction::CreateVertex);
+                }
+                ToolbarButtonType::CreateEdge => {
+                    button_events.send(ToolbarAction::CreateEdge);
+                }
+                ToolbarButtonType::CreateFace => {
+                    button_events.send(ToolbarAction::CreateFace);
+                }
+                ToolbarButtonType::Delete => {
+                    button_events.send(ToolbarAction::Delete);
+                }
+            }
         }
     }
 }
@@ -81,7 +121,7 @@ pub fn handle_toolbar_actions(
     mut commands: Commands,
     mut events: EventReader<ToolbarAction>,
     mut part_query: Query<(Entity, &mut Part)>,
-    mut extrusion_params: ResMut<ExtrusionParams>,
+    extrusion_params: ResMut<ExtrusionParams>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -126,6 +166,43 @@ pub fn handle_toolbar_actions(
             ToolbarAction::Delete => {
                 // Handle deletion
             }
+            ToolbarAction::SelectFaceMode => {
+                // Handle face selection mode
+            }
+            ToolbarAction::SelectEdgeMode => {
+                // Handle edge selection mode
+            }
+        }
+    }
+}
+
+// Add system to update button visuals based on state
+pub fn update_selection_mode_buttons(
+    mut buttons: Query<
+        (&ToolbarButtonType, &mut ToggleableButton, &mut BackgroundColor),
+        With<Button>,
+    >,
+    mode: Res<EditorMode>,
+) {
+    for (button_type, mut toggleable, mut color) in buttons.iter_mut() {
+        match button_type {
+            ToolbarButtonType::SelectFaceMode => {
+                toggleable.is_active = matches!(*mode, EditorMode::SelectFace);
+                *color = if toggleable.is_active {
+                    PRESSED_BUTTON.into()
+                } else {
+                    NORMAL_BUTTON.into()
+                };
+            }
+            ToolbarButtonType::SelectEdgeMode => {
+                toggleable.is_active = matches!(*mode, EditorMode::SelectEdge);
+                *color = if toggleable.is_active {
+                    PRESSED_BUTTON.into()
+                } else {
+                    NORMAL_BUTTON.into()
+                };
+            }
+            _ => {}
         }
     }
 }

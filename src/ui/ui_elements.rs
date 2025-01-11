@@ -5,6 +5,7 @@ use crate::part::components::*; // Import the Vertex component
 use crate::part;
 use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
 use crate::tools::mesh_tools::{get_vertices, create_vertex_dummies};
+use super::components::*;
 
 // UI Constants
 const BUTTON_WIDTH: f32 = 120.0;
@@ -14,16 +15,6 @@ const TEXT_SIZE: f32 = 16.0;
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 const TOOLBAR_WIDTH: f32 = 150.0;
 const TOOLBAR_BG: Color = Color::srgb(0.2, 0.2, 0.2);
-
-// Button types for different CAD operations
-#[derive(Component)]
-pub enum ToolbarButtonType {
-    Extrude,
-    CreateVertex,
-    CreateEdge,
-    CreateFace,
-    Delete,
-}
 
 fn create_button_bundle() -> (Button, Node, BackgroundColor, BorderColor) {
     (
@@ -63,11 +54,7 @@ fn create_shape_bundle(label: &str) -> (Text, TextFont, TextColor) {
     )
 }
 
-#[derive(Component,)]
-pub struct ToolbarButton;
-
 pub fn setup_ui(mut commands: Commands) {
-
     // Top toolbar (keeping existing one)
     commands
         .spawn(
@@ -146,6 +133,23 @@ fn setup_top_toolbar(parent: &mut ChildBuilder) {
     parent
         .spawn((create_button_bundle(), ToolbarButton))
         .with_child(create_text_bundle("View"));
+    parent
+        .spawn((
+            create_button_bundle(),
+            ToolbarButton,
+            ToolbarButtonType::SelectFaceMode,
+            ToggleableButton { is_active: true },  // Select mode on by default
+        ))
+        .with_child(create_text_bundle("Select Face"));
+
+    parent
+        .spawn((
+            create_button_bundle(),
+            ToolbarButton,
+            ToolbarButtonType::SelectEdgeMode,
+            ToggleableButton { is_active: false },
+        ))
+        .with_child(create_text_bundle("Select Edge"));
 }
 
 
@@ -200,68 +204,6 @@ pub enum ToolbarAction {
     CreateEdge,
     CreateFace,
     Delete,
+    SelectFaceMode,
+    SelectEdgeMode,
 }
-
-// #[derive(Event)]
-// pub enum ButtonAction {
-//     Save,
-//     Load,
-//     Exit,
-//     ViewVertices,
-// }
-
-// // Component to identify button type
-// #[derive(Component)]
-// pub enum ButtonType {
-//     Save,
-//     Load,
-//     Exit,
-//     ViewVertices,
-// }
-
-// pub fn button_action_system(
-//     mut interaction_query: Query<
-//         (&Interaction, &mut BackgroundColor, &ButtonType),
-//         Changed<Interaction>
-//     >,
-//     mut button_events: EventWriter<ButtonAction>,
-// ) {
-//     for (interaction, mut _color, button_type) in &mut interaction_query {
-//         if *interaction == Interaction::Pressed {
-//             // Emit the appropriate event based on button type
-//             match *button_type {
-//                 ButtonType::Save => button_events.send(ButtonAction::Save),
-//                 ButtonType::Load => button_events.send(ButtonAction::Load),
-//                 ButtonType::Exit => button_events.send(ButtonAction::Exit),
-//                 ButtonType::ViewVertices => button_events.send(ButtonAction::ViewVertices),
-//             };
-//         }
-//     }
-// }
-
-// Add event handler system
-// fn handle_button_actions(
-//     mut commands: Commands,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut materials: ResMut<Assets<StandardMaterial>>,
-//     mut events: EventReader<ButtonAction>,
-//     selected: Res<SelectedMesh>,
-//     mesh_assests: Res<Assets<Mesh>>,
-// ) {
-//     for event in events.read() {
-//         match event {
-//             // ButtonAction::Save => { /* Save logic */ },
-//             // ButtonAction::Load => { /* Load logic */ },
-//             // ButtonAction::Exit => { /* Exit logic */ },
-//             ButtonAction::ViewVertices => { 
-//                 println!("View Vertices button pressed");
-//                 if let Some(mesh_handle) = &selected.mesh {
-//                     if let Some(mesh) = mesh_assests.get(mesh_handle) {
-//                         let vertices = get_vertices(mesh);
-//                         // create_vertex_dummies(commands, materials, meshes, &vertices);
-//                     }
-//                 }
-//              },
-//         }
-//     }
-// }

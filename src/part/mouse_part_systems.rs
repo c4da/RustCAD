@@ -1,33 +1,21 @@
 use bevy::{color::palettes::tailwind::*, input::mouse::{self, MouseButtonInput}, picking::pointer::PointerInteraction, prelude::*};
 use crate::tools::{colors::{PRESSED_COLOR, NO_CHANGE_COLOR, HOVER_COLOR}, components::Shape};
 use super::components::{Face, Part};
-
-// Returns an observer that updates the entity's material and provides access to its mesh.
-pub fn update_material_on<E>(
-    new_material: Handle<StandardMaterial>,
-) -> impl Fn(Trigger<E>, Query<(&mut MeshMaterial3d<StandardMaterial>, &Mesh3d)>) {
-    // An observer closure that captures `new_material`. We do this to avoid needing to write four
-    // versions of this observer, each triggered by a different event and with a different hardcoded
-    // material. Instead, the event type is a generic, and the material is passed in.
-    move |trigger, mut query| {
-        // The query accesses entities with both MeshMaterial3d<StandardMaterial> and Mesh3d components
-        if let Ok((mut material, mesh)) = query.get_mut(trigger.entity()) {
-            // `material` is a mutable reference to the MeshMaterial3d<StandardMaterial> component
-            // `mesh` is an immutable reference to the Mesh3d component
-            material.0 = new_material.clone();
-            println!("Clicked mesh: {:?}", mesh.0);
-            // Now you have access to mesh.0 which is the Handle<Mesh> of the clicked object
-            // You can use this to work with the mesh data
-        }
-    }
-}
+use crate::ui::ui_button_systems::EditorMode;
 
 pub fn update_materials_system(
     pointers: Query<&PointerInteraction>,
     mut mesh_query: Query<(&mut MeshMaterial3d<StandardMaterial>, &Mesh3d)>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     buttons: Res<ButtonInput<MouseButton>>,
+    selection_mode: Res<EditorMode>, // EditorMode is a custom resource that tracks the current select mode
 ) {
+
+    // Only allow selection in Select mode
+    if *selection_mode != EditorMode::SelectFace {
+        return;
+    }
+
     let no_change_matl = materials.add(NO_CHANGE_COLOR);
     let hover_matl = materials.add(HOVER_COLOR);
     let pressed_matl = materials.add(PRESSED_COLOR);
@@ -62,9 +50,14 @@ pub fn handle_face_selection(
     mut face_query: Query<(&mut MeshMaterial3d<StandardMaterial>, &Face, &Parent)>,
     mut part_query: Query<&mut Part>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    selection_mode: Res<EditorMode>,
 ) {
     // Only process when left mouse button is just pressed
     if !mouse.pressed(MouseButton::Left) {
+        return;
+    }
+
+    if *selection_mode != EditorMode::SelectFace {
         return;
     }
     for interaction in pointers.iter() {

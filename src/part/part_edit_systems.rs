@@ -203,10 +203,6 @@ pub fn extrude_faces(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     parent_entity: Entity,
 ) {
-    let no_change_matl = materials.add(NO_CHANGE_COLOR);
-    let hover_matl = materials.add(HOVER_COLOR);
-    let pressed_matl = materials.add(PRESSED_COLOR);
-
     let mut new_vertices = Vec::new();
     let mut new_edges = Vec::new();
     let mut new_faces = Vec::new();
