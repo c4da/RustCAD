@@ -17,6 +17,7 @@ pub fn button_highlight_system(
             &mut BackgroundColor,
             &mut BorderColor,
             &Children,
+            Option<&ToggleableButton>,
         ),
         (Changed<Interaction>, With<Button>),
     >,
@@ -25,9 +26,12 @@ pub fn button_highlight_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for (interaction, 
-        mut color, 
-        mut border_color, children) in &mut interaction_query {
+    for (interaction, mut color, mut border_color, children, toggleable) in &mut interaction_query {
+        // Skip color management for toggleable buttons
+        if toggleable.is_some() {
+            continue;
+        }
+
         let mut _text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Pressed => {
@@ -179,27 +183,32 @@ pub fn handle_toolbar_actions(
 // Add system to update button visuals based on state
 pub fn update_selection_mode_buttons(
     mut buttons: Query<
-        (&ToolbarButtonType, &mut ToggleableButton, &mut BackgroundColor),
+        (
+            &ToolbarButtonType,
+            &mut ToggleableButton,
+            &mut BackgroundColor,
+            &Interaction,
+        ),
         With<Button>,
     >,
     mode: Res<EditorMode>,
 ) {
-    for (button_type, mut toggleable, mut color) in buttons.iter_mut() {
+    for (button_type, mut toggleable, mut color, interaction) in buttons.iter_mut() {
         match button_type {
             ToolbarButtonType::SelectFaceMode => {
                 toggleable.is_active = matches!(*mode, EditorMode::SelectFace);
-                *color = if toggleable.is_active {
-                    PRESSED_BUTTON.into()
-                } else {
-                    NORMAL_BUTTON.into()
+                *color = match (*interaction, toggleable.is_active) {
+                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
+                    (_, true) => PRESSED_BUTTON.into(),
+                    _ => NORMAL_BUTTON.into(),
                 };
             }
             ToolbarButtonType::SelectEdgeMode => {
                 toggleable.is_active = matches!(*mode, EditorMode::SelectEdge);
-                *color = if toggleable.is_active {
-                    PRESSED_BUTTON.into()
-                } else {
-                    NORMAL_BUTTON.into()
+                *color = match (*interaction, toggleable.is_active) {
+                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
+                    (_, true) => PRESSED_BUTTON.into(),
+                    _ => NORMAL_BUTTON.into(),
                 };
             }
             _ => {}
