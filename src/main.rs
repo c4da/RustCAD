@@ -3,7 +3,9 @@ mod ui;
 mod view;
 mod part;
 
-use bevy::prelude::*;
+use std::f32::consts::PI;
+
+use bevy::{prelude::*, color::palettes::css::*};
 use tools::colors;
 use part::components::ExtrusionParams;
 use ui::{ui_elements::ToolbarAction, EditorMode};
@@ -22,6 +24,7 @@ fn main() {
             direction: Vec3::Y,
             distance: 1.0,
         })
+        .init_gizmo_group::<MyRoundGizmos>()
         .init_resource::<EditorMode>()
         // .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, 
@@ -38,7 +41,8 @@ fn main() {
                 part::rotate,
                 ui::button_action_system,
                 ui::handle_toolbar_actions,
-                ui::update_selection_mode_buttons,))
+                ui::update_selection_mode_buttons,
+                draw_gizmos,))
         .run();
 }
 
@@ -112,4 +116,22 @@ fn setup_scene(
     //         ..default()
     //     },)
     // );
+}
+
+#[derive(Default, Reflect, GizmoConfigGroup)]
+struct MyRoundGizmos {}
+
+fn draw_gizmos(
+    mut gizmos: Gizmos,
+    mut my_gizmos: Gizmos<MyRoundGizmos>,
+    time: Res<Time>,
+) {
+    gizmos.cross(Vec3::new(0., 0., 0.), 0.5, FUCHSIA);
+    gizmos.grid(
+        Quat::from_rotation_x(PI / 2.),
+        UVec2::splat(20),
+        Vec2::new(2., 2.),
+        // Light gray
+        LinearRgba::gray(0.65),
+    );
 }

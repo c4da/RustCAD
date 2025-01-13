@@ -9,6 +9,8 @@ pub enum ToolbarButtonType {
     Delete,
     SelectFaceMode,
     SelectEdgeMode,
+    RotatePart,
+    MoveFace,
 }
 
 #[derive(Component,)]

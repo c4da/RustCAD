@@ -150,6 +150,23 @@ fn setup_top_toolbar(parent: &mut ChildBuilder) {
             ToggleableButton { is_active: false },
         ))
         .with_child(create_text_bundle("Select Edge"));
+
+        parent
+        .spawn((
+            create_button_bundle(),
+            ToolbarButton,
+            ToolbarButtonType::RotatePart,
+            ToggleableButton { is_active: false },
+        ))
+        .with_child(create_text_bundle("Rotate Part"));
+        parent
+            .spawn((
+                create_button_bundle(),
+                ToolbarButton,
+                ToolbarButtonType::MoveFace,
+                ToggleableButton { is_active: false },
+            ))
+            .with_child(create_text_bundle("Move Face"));
 }
 
 
@@ -206,4 +223,6 @@ pub enum ToolbarAction {
     Delete,
     SelectFaceMode,
     SelectEdgeMode,
+    RotatePart,
+    MoveFace,
 }

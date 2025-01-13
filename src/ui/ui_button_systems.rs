@@ -66,6 +66,8 @@ pub fn button_highlight_system(
 pub enum EditorMode {
     SelectFace,
     SelectEdge,
+    MoveFace,
+    RotatePart
 }
 
 impl Default for EditorMode {
@@ -73,7 +75,7 @@ impl Default for EditorMode {
         EditorMode::SelectFace  // Default to select mode
     }
 }
-
+// System handles buttons behaviour, not action that the button should trigger
 pub fn button_action_system(
     mut interaction_query: Query<
         (&Interaction, &ToolbarButtonType, Option<&mut ToggleableButton>),
@@ -85,8 +87,11 @@ pub fn button_action_system(
     for (interaction, button_type, toggleable) in &mut interaction_query {
         if *interaction == Interaction::Pressed {
             match button_type {
-                ToolbarButtonType::SelectEdgeMode | ToolbarButtonType::SelectFaceMode => {
-                    if let Some(mut toggle) = toggleable {
+                ToolbarButtonType::SelectEdgeMode |
+                ToolbarButtonType::SelectFaceMode |
+                ToolbarButtonType::RotatePart |
+                ToolbarButtonType::MoveFace => {
+                    if let Some(mut _toggle) = toggleable {
                         match button_type {
                             ToolbarButtonType::SelectEdgeMode => {
                                 *mode = EditorMode::SelectEdge;
@@ -95,6 +100,14 @@ pub fn button_action_system(
                             ToolbarButtonType::SelectFaceMode => {
                                 *mode = EditorMode::SelectFace;
                                 button_events.send(ToolbarAction::SelectFaceMode);
+                            }
+                            ToolbarButtonType::RotatePart => {
+                                *mode = EditorMode::RotatePart;
+                                button_events.send(ToolbarAction::RotatePart);
+                            }
+                            ToolbarButtonType::MoveFace => {
+                                *mode = EditorMode::MoveFace;
+                                button_events.send(ToolbarAction::MoveFace);
                             }
                             _ => {}
                         }
@@ -121,6 +134,7 @@ pub fn button_action_system(
     }
 }
 
+// System to handle toolbar actions - actual actions that the button should trigger
 pub fn handle_toolbar_actions(
     mut commands: Commands,
     mut events: EventReader<ToolbarAction>,
@@ -176,6 +190,8 @@ pub fn handle_toolbar_actions(
             ToolbarAction::SelectEdgeMode => {
                 // Handle edge selection mode
             }
+            ToolbarAction::RotatePart => {},
+            ToolbarAction::MoveFace => {},
         }
     }
 }
@@ -205,6 +221,22 @@ pub fn update_selection_mode_buttons(
             }
             ToolbarButtonType::SelectEdgeMode => {
                 toggleable.is_active = matches!(*mode, EditorMode::SelectEdge);
+                *color = match (*interaction, toggleable.is_active) {
+                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
+                    (_, true) => PRESSED_BUTTON.into(),
+                    _ => NORMAL_BUTTON.into(),
+                };
+            }
+            ToolbarButtonType::RotatePart => {
+                toggleable.is_active = matches!(*mode, EditorMode::RotatePart);
+                *color = match (*interaction, toggleable.is_active) {
+                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
+                    (_, true) => PRESSED_BUTTON.into(),
+                    _ => NORMAL_BUTTON.into(),
+                };
+            }
+            ToolbarButtonType::MoveFace => {
+                toggleable.is_active = matches!(*mode, EditorMode::MoveFace);
                 *color = match (*interaction, toggleable.is_active) {
                     (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
                     (_, true) => PRESSED_BUTTON.into(),
