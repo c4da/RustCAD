@@ -1,4 +1,4 @@
-use bevy::{color::palettes::tailwind::{self, *}, prelude::Color};
+use bevy::{color::palettes::tailwind::{*}, prelude::Color};
 
 pub const YELLOW: Color = Color::linear_rgb(255.0, 255.0, 0.0);
 pub const BLACK: Color = Color::linear_rgb(0.0, 0.0, 0.0);

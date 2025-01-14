@@ -3,7 +3,6 @@ use bevy::render::mesh::PrimitiveTopology;
 use bevy::asset::RenderAssetUsages;
 use super::components::*;
 use bevy::render::mesh::Indices;
-use crate::tools::colors::*;
 use super::mouse_part_systems::*;
 
 fn create_mesh_for_face(vertices: &[Vec3]) -> Mesh {
@@ -43,6 +42,7 @@ pub fn create_3d_object_system(
 
     let parent = commands.spawn((
         Transform::from_xyz(0.0, 0.5, 0.0),
+        Visibility::default(),
         part,
     )).id();
 
@@ -69,6 +69,7 @@ pub fn create_3d_object_system(
             Mesh3d(meshes.add(create_mesh_for_face(vertices))),
             MeshMaterial3d(materials.add(Color::WHITE)),
             Transform::from_xyz(0.0, 0.5, 0.0),
+            Visibility::default(),
             face,
         ))
         .set_parent(parent);

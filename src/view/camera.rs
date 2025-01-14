@@ -35,7 +35,7 @@ pub fn spawn_camera() -> PanOrbitCameraBundle {
     camera.state.radius = 400.0;  // Distance from camera to target point
     camera.state.pitch = -15.0f32.to_radians();  // Adjusted pitch to look downwards
     camera.state.yaw = 0.0f32.to_radians(); // Adjusted yaw
-    return camera;
+    camera
 }
 
 
@@ -136,6 +136,7 @@ pub fn pan_orbit_camera(
             total_pan -= total_motion * settings.pan_sensitivity;
         }
         if settings.scroll_action == Some(PanOrbitAction::Pan) {
+            //warn(Result::Err("Panning"));
             total_pan -= total_scroll_lines
                 * settings.scroll_line_sensitivity * settings.pan_sensitivity;
             total_pan -= total_scroll_pixels
@@ -147,6 +148,7 @@ pub fn pan_orbit_camera(
             total_orbit -= total_motion * settings.orbit_sensitivity;
         }
         if settings.scroll_action == Some(PanOrbitAction::Orbit) {
+            //warn(Result::Err("Orbiting"));
             total_orbit -= total_scroll_lines
                 * settings.scroll_line_sensitivity * settings.orbit_sensitivity;
             total_orbit -= total_scroll_pixels
@@ -158,6 +160,7 @@ pub fn pan_orbit_camera(
             total_zoom -= total_motion * settings.zoom_sensitivity;
         }
         if settings.scroll_action == Some(PanOrbitAction::Zoom) {
+            //warn(Result::Err("Zooming"));
             total_zoom -= total_scroll_lines
                 * settings.scroll_line_sensitivity * settings.zoom_sensitivity;
             total_zoom -= total_scroll_pixels
