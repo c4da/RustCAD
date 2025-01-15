@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use bevy::prelude::*;
 
 /// A marker component for our shapes so we can query them separately from the ground plane.
@@ -62,6 +63,8 @@ pub struct Face {
     pub vertices: Vec<Vertex>,
     pub edges: Vec<Edge>,
     pub normal: Vec3,
+    pub selected: bool
+    // pub entity: Option<Entity>,
 }
 
 impl Face {
@@ -74,6 +77,8 @@ impl Face {
             vertices: self.vertices.clone(),
             edges: self.edges.clone(),
             normal: self.normal.clone(),
+            selected: false
+            // entity: self.entity
         }
     }
 }

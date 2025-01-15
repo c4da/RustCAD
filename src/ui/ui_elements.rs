@@ -1,11 +1,9 @@
 use bevy::prelude::*;
 use bevy::utils::warn;
-use crate::part::components::*; // Import the Vertex component
 
-use crate::part;
-use crate::tools::colors::{GRAY, PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
-use crate::tools::mesh_tools::{get_vertices, create_vertex_dummies};
 use super::components::*;
+use crate::part;
+use crate::tools::colors::GRAY;
 
 // UI Constants
 const BUTTON_WIDTH: f32 = 120.0;

@@ -189,6 +189,8 @@ fn create_faces_from_edges(edges: &Vec<Edge>) -> Vec<Face> {
             vertices: vertices.clone(),
             edges: face_edges,
             normal: calculate_face_normal(&points),
+            selected: false
+            // entity: None,
         });
     }
 
@@ -252,6 +254,8 @@ pub fn extrude_faces(
             vertices: face_new_vertices.clone(),
             edges: new_face_edges,
             normal: face.normal,
+            selected: false
+            // entity: None
         };
         new_faces.push(extruded_face.clone());
 
@@ -289,6 +293,8 @@ pub fn extrude_faces(
                 vertices: side_vertices,
                 edges: side_edges,
                 normal: calculate_face_normal(&side_vertices_coords),
+                selected: false,
+                // entity: None,
             };
             new_faces.push(side_face.clone());
 
