@@ -10,7 +10,11 @@ use tools::colors;
 use part::components::ExtrusionParams;
 use part::components::Part;
 use ui::{ui_elements::ToolbarAction, EditorMode};
-use part::mouse_part_systems::{handle_face_selection, update_materials_system};
+use part::mouse_part_systems::{handle_face_selection, update_materials_system, draw_mesh_intersections};
+use view::PanOrbitCamera;
+
+#[derive(Component)]
+struct CameraGizmo;
 
 // inspector for debugging
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -38,7 +42,7 @@ fn main() {
                 ui::setup_ui,
             ))
         .add_systems(Update, (
-            view::pan_orbit_camera.run_if(any_with_component::<view::PanOrbitState>),
+            view::pan_orbit_camera.run_if(any_with_component::<view::PanOrbitCamera>),
             ui::button_highlight_system,
             part::draw_mesh_intersections,
             part::handle_face_selection,
@@ -48,17 +52,20 @@ fn main() {
             ui::handle_toolbar_actions,
             ui::update_selection_mode_buttons,
             draw_gizmos,
-            update_gizmo_state,
-            draw_global_axes,
+            update_gizmo_transform.after(part::rotate), // Run after rotate to avoid conflicts
         ))
         .run();
 }
+
+#[derive(Component)]
+struct Gizmo;
 
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>, 
+    mut gizmos: Gizmos,
 ) {
     let points = vec![
         Vec3::new(0.0, 0.0, 0.0),
@@ -93,9 +100,11 @@ fn setup_scene(
     ));
 
     // Camera that can be panned and orbited
+    let (camera_bundle, pan_orbit) = view::spawn_camera();
     commands.spawn((
-                view::spawn_camera(),
-                Transform::from_xyz(0.0, 7.0, 40.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),));
+        camera_bundle,
+        pan_orbit,
+    ));
 
     // Instructions
     commands.spawn((
@@ -107,6 +116,71 @@ fn setup_scene(
             ..default()
         },
     ));
+
+    let translation = Vec3::new(100.0, 100.0, 0.0);
+
+    // World Gizmo (X-axis)
+    commands.spawn((
+        Mesh3d(meshes.add(Mesh::from(Cuboid::new(2.0, 0.1, 0.1)))), // Create cuboid with exact dimensions
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: colors::RED,
+            emissive: colors::RED.to_linear() * 0.5, // Add some glow
+            unlit: true, // Make material independent of lighting
+            ..default()})),
+        Transform::from_xyz(1.0, 0.0, 0.0).with_translation(translation),
+        Gizmo,
+        PickingBehavior::IGNORE,
+    ));
+
+    // World Gizmo (Y-axis)
+    commands.spawn((
+        Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.1, 2.0, 0.1)))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: colors::GREEN,
+            emissive: colors::GREEN.to_linear() * 0.5, // Add some glow
+            unlit: true, // Make material independent of lighting
+            alpha_mode: AlphaMode::Blend,
+            ..default()})),
+        Transform::from_xyz(0.0, 1.0, 0.0).with_translation(translation),
+        Gizmo,
+        PickingBehavior::IGNORE,
+    ));
+
+    // World Gizmo (Z-axis)
+    commands.spawn((
+        Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.1, 0.1, 2.0)))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: colors::BLUE,
+            emissive: colors::BLUE.to_linear() * 0.5, // Add some glow
+            unlit: true, // Make material independent of lighting
+            ..default()})),
+        Transform::from_xyz(0.0, 0.0, 1.0).with_translation(translation),
+        Gizmo,
+        PickingBehavior::IGNORE,
+    ));
+}
+
+// Keep the gizmo fixed relative to the camera
+fn update_gizmo_transform(
+    mut params: ParamSet<(
+        Query<&Transform, With<Camera>>,
+        Query<&mut Transform, With<Gizmo>>,
+    )>,
+) {
+    // Get camera transform first
+    let camera_transform = if let Ok(transform) = params.p0().get_single() {
+        transform.clone()
+    } else {
+        return;
+    };
+
+    // Then update gizmo transforms
+    for mut gizmo_transform in params.p1().iter_mut() {
+        // Place the gizmo in front of the camera
+        gizmo_transform.translation = camera_transform.translation + camera_transform.forward() * 20.0 
+        + camera_transform.up() * 7.0 + camera_transform.right() * 7.0; //todo this needs to be fixed so it is set to the right position according the windows size
+        // gizmo_transform.rotation = camera_transform.rotation;
+    }
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -116,7 +190,26 @@ fn draw_gizmos(
     mut gizmos: Gizmos,
     mut my_gizmos: Gizmos<MyRoundGizmos>,
     _time: Res<Time>,
+    camera_q: Query<(&Camera, &GlobalTransform), With<Camera>>,
+    windows: Query<&Window>,
 ) {
+    // Draw orientation gizmo in top-left corner
+    if let (Ok((camera, camera_transform)), Ok(window)) = (camera_q.get_single(), windows.get_single()) {
+        let screen_pos = Vec2::new(
+            100.0,  // 100 pixels from left
+            100.0,  // 100 pixels from top
+        );
+        
+        if let Ok(ray) = camera.viewport_to_world(camera_transform, screen_pos) {
+            let distance = 5.0;
+            let gizmo_pos = ray.origin + ray.direction * distance;
+            // Use identity rotation to keep axes aligned with world space
+            let gizmo_transform = Transform::from_translation(gizmo_pos).with_rotation(Quat::IDENTITY);
+            gizmos.axes(gizmo_transform, 0.3);
+        }
+    }
+
+    // Draw world origin marker
     gizmos.cross(Vec3::new(0., 0., 0.), 0.5, FUCHSIA);
     gizmos.grid(
         Quat::from_rotation_x(PI / 2.),
@@ -127,69 +220,12 @@ fn draw_gizmos(
     );
 }
 
-fn update_gizmo_state(
-    mut gizmo_state: ResMut<GizmoState>,
-    part_q: Query<(&Part, &GlobalTransform)>,
-) {
-    // Update rotation from part
-    if let Some((_, transform)) = part_q.iter().next() {
-        gizmo_state.rotation = transform.rotation();
-    }
-}
-
-fn draw_global_axes(
-    mut gizmos: Gizmos,
-    gizmo_state: Res<GizmoState>,
-    camera_q: Query<(&Camera, &GlobalTransform), With<Camera>>,
-    windows: Query<&Window>,
-) {
-    if let (Ok((camera, camera_transform)), Ok(window)) = (camera_q.get_single(), windows.get_single()) {
-        // Fixed screen position (top-right corner)
-        let screen_pos = Vec2::new(
-            window.width() - 140.0,  // 100 pixels from right
-            110.0,  // 100 pixels from top
-        );
-        
-        // Convert screen position to world space
-        if let Ok(ray) = camera.viewport_to_world(camera_transform, screen_pos) {
-            // Position the gizmo along the ray at a fixed distance
-            let distance = 5.0;
-            let gizmo_pos = ray.origin + ray.direction * distance;
-            
-            let gizmo_transform = GlobalTransform::from(
-                Transform::from_translation(gizmo_pos)
-                    .with_rotation(gizmo_state.rotation)
-            );
-            
-            // Draw axes with fixed size
-            gizmos.axes(gizmo_transform, 0.5);
-        }
-    }
-}
-
-// fn draw_local_axes(
-//     mut gizmos: Gizmos,
-//     camera_q: Query<&GlobalTransform, With<Camera>>,
-//     gizmo_state: Res<GizmoState>,
+// fn update_gizmo_state(
+//     mut gizmo_state: ResMut<GizmoState>,
+//     part_q: Query<(&Part, &GlobalTransform)>,
 // ) {
-//     if let Ok(camera_transform) = camera_q.get_single() {
-//         // Calculate a fixed offset from the camera
-//         let forward = camera_transform.forward();
-//         let right = camera_transform.right();
-//         let up = camera_transform.up();
-        
-//         // Position the gizmo at a fixed distance in front of the camera, offset to the top-right
-//         let offset = -forward * 5.0 + right * 2.0 + up * 2.0;
-//         let gizmo_position = offset;
-//         // let gizmo_position = camera_transform.translation() + offset;
-        
-//         // Create transform for gizmo using the stored rotation
-//         let gizmo_transform = GlobalTransform::from(
-//             Transform::from_translation(gizmo_position)
-//                 .with_rotation(gizmo_state.rotation)
-//         );
-        
-//         // Draw axes with fixed size
-//         gizmos.axes(gizmo_transform, 1.0);
+//     // Update rotation from part
+//     if let Some((_, transform)) = part_q.iter().next() {
+//         gizmo_state.rotation = transform.rotation();
 //     }
 // }

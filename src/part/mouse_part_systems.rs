@@ -1,11 +1,11 @@
 use bevy::{color::palettes::tailwind::*, input::mouse::{self, MouseButtonInput}, picking::pointer::PointerInteraction, prelude::*};
-use crate::tools::{colors::{PRESSED_COLOR, NO_CHANGE_COLOR, HOVER_COLOR}, components::Shape};
+use crate::{tools::{colors::{HOVER_COLOR, NO_CHANGE_COLOR, PRESSED_COLOR}, components::Shape}, Gizmo};
 use super::components::{Face, Part};
 use crate::ui::ui_button_systems::EditorMode;
 
 pub fn update_materials_system(
     pointers: Query<&PointerInteraction>,
-    mut mesh_query: Query<(&mut MeshMaterial3d<StandardMaterial>, &Mesh3d)>,
+    mut mesh_query: Query<(&mut MeshMaterial3d<StandardMaterial>, &Mesh3d), Without<Gizmo>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     buttons: Res<ButtonInput<MouseButton>>,
     selection_mode: Res<EditorMode>, // EditorMode is a custom resource that tracks the current select mode
