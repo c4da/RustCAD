@@ -2,9 +2,11 @@ mod tools;
 mod ui;
 mod view;
 mod part;
+mod plugins;
 
 use std::f32::consts::PI;
 
+use crate::plugins::global_gizmo_plugin::GlobalGizmoPlugin;
 use bevy::{prelude::*, color::palettes::css::*};
 use tools::colors;
 use part::components::ExtrusionParams;
@@ -27,7 +29,7 @@ struct GizmoState {
 fn main() {
     App::new()
         // MeshPickingPlugin is not a default plugin
-        .add_plugins((DefaultPlugins, MeshPickingPlugin))
+        .add_plugins((DefaultPlugins, MeshPickingPlugin, GlobalGizmoPlugin))
         .add_event::<ToolbarAction>()
         .insert_resource(ExtrusionParams {
             direction: Vec3::Y,
@@ -52,13 +54,13 @@ fn main() {
             ui::handle_toolbar_actions,
             ui::update_selection_mode_buttons,
             draw_gizmos,
-            update_gizmo_transform.after(part::rotate), // Run after rotate to avoid conflicts
+            // update_gizmo_transform.after(part::rotate), // Run after rotate to avoid conflicts
         ))
         .run();
 }
 
-#[derive(Component)]
-struct Gizmo;
+// #[derive(Component)]
+// struct Gizmo;
 
 fn setup_scene(
     mut commands: Commands,
@@ -117,71 +119,71 @@ fn setup_scene(
         },
     ));
 
-    let translation = Vec3::new(100.0, 100.0, 0.0);
+    // let translation = Vec3::new(100.0, 100.0, 0.0);
 
-    // World Gizmo (X-axis)
-    commands.spawn((
-        Mesh3d(meshes.add(Mesh::from(Cuboid::new(2.0, 0.1, 0.1)))), // Create cuboid with exact dimensions
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: colors::RED,
-            emissive: colors::RED.to_linear() * 0.5, // Add some glow
-            unlit: true, // Make material independent of lighting
-            ..default()})),
-        Transform::from_xyz(1.0, 0.0, 0.0).with_translation(translation),
-        Gizmo,
-        PickingBehavior::IGNORE,
-    ));
+    // // World Gizmo (X-axis)
+    // commands.spawn((
+    //     Mesh3d(meshes.add(Mesh::from(Cuboid::new(2.0, 0.1, 0.1)))), // Create cuboid with exact dimensions
+    //     MeshMaterial3d(materials.add(StandardMaterial {
+    //         base_color: colors::RED,
+    //         emissive: colors::RED.to_linear() * 0.5, // Add some glow
+    //         unlit: true, // Make material independent of lighting
+    //         ..default()})),
+    //     Transform::from_xyz(1.0, 0.0, 0.0).with_translation(translation),
+    //     Gizmo,
+    //     PickingBehavior::IGNORE,
+    // ));
 
-    // World Gizmo (Y-axis)
-    commands.spawn((
-        Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.1, 2.0, 0.1)))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: colors::GREEN,
-            emissive: colors::GREEN.to_linear() * 0.5, // Add some glow
-            unlit: true, // Make material independent of lighting
-            alpha_mode: AlphaMode::Blend,
-            ..default()})),
-        Transform::from_xyz(0.0, 1.0, 0.0).with_translation(translation),
-        Gizmo,
-        PickingBehavior::IGNORE,
-    ));
+    // // World Gizmo (Y-axis)
+    // commands.spawn((
+    //     Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.1, 2.0, 0.1)))),
+    //     MeshMaterial3d(materials.add(StandardMaterial {
+    //         base_color: colors::GREEN,
+    //         emissive: colors::GREEN.to_linear() * 0.5, // Add some glow
+    //         unlit: true, // Make material independent of lighting
+    //         alpha_mode: AlphaMode::Blend,
+    //         ..default()})),
+    //     Transform::from_xyz(0.0, 1.0, 0.0).with_translation(translation),
+    //     Gizmo,
+    //     PickingBehavior::IGNORE,
+    // ));
 
-    // World Gizmo (Z-axis)
-    commands.spawn((
-        Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.1, 0.1, 2.0)))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: colors::BLUE,
-            emissive: colors::BLUE.to_linear() * 0.5, // Add some glow
-            unlit: true, // Make material independent of lighting
-            ..default()})),
-        Transform::from_xyz(0.0, 0.0, 1.0).with_translation(translation),
-        Gizmo,
-        PickingBehavior::IGNORE,
-    ));
+    // // World Gizmo (Z-axis)
+    // commands.spawn((
+    //     Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.1, 0.1, 2.0)))),
+    //     MeshMaterial3d(materials.add(StandardMaterial {
+    //         base_color: colors::BLUE,
+    //         emissive: colors::BLUE.to_linear() * 0.5, // Add some glow
+    //         unlit: true, // Make material independent of lighting
+    //         ..default()})),
+    //     Transform::from_xyz(0.0, 0.0, 1.0).with_translation(translation),
+    //     Gizmo,
+    //     PickingBehavior::IGNORE,
+    // ));
 }
 
-// Keep the gizmo fixed relative to the camera
-fn update_gizmo_transform(
-    mut params: ParamSet<(
-        Query<&Transform, With<Camera>>,
-        Query<&mut Transform, With<Gizmo>>,
-    )>,
-) {
-    // Get camera transform first
-    let camera_transform = if let Ok(transform) = params.p0().get_single() {
-        transform.clone()
-    } else {
-        return;
-    };
+// // Keep the gizmo fixed relative to the camera
+// fn update_gizmo_transform(
+//     mut params: ParamSet<(
+//         Query<&Transform, With<Camera>>,
+//         Query<&mut Transform, With<Gizmo>>,
+//     )>,
+// ) {
+//     // Get camera transform first
+//     let camera_transform = if let Ok(transform) = params.p0().get_single() {
+//         transform.clone()
+//     } else {
+//         return;
+//     };
 
-    // Then update gizmo transforms
-    for mut gizmo_transform in params.p1().iter_mut() {
-        // Place the gizmo in front of the camera
-        gizmo_transform.translation = camera_transform.translation + camera_transform.forward() * 20.0 
-        + camera_transform.up() * 7.0 + camera_transform.right() * 7.0; //todo this needs to be fixed so it is set to the right position according the windows size
-        // gizmo_transform.rotation = camera_transform.rotation;
-    }
-}
+//     // Then update gizmo transforms
+//     for mut gizmo_transform in params.p1().iter_mut() {
+//         // Place the gizmo in front of the camera
+//         gizmo_transform.translation = camera_transform.translation + camera_transform.forward() * 20.0 
+//         + camera_transform.up() * 7.0 + camera_transform.right() * 7.0; //todo this needs to be fixed so it is set to the right position according the windows size
+//         // gizmo_transform.rotation = camera_transform.rotation;
+//     }
+// }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct MyRoundGizmos {}

@@ -1,5 +1,5 @@
 use bevy::{color::palettes::tailwind::*, input::mouse::{self, MouseButtonInput}, picking::pointer::PointerInteraction, prelude::*};
-use crate::{tools::{colors::{HOVER_COLOR, NO_CHANGE_COLOR, PRESSED_COLOR}, components::Shape}, Gizmo};
+use crate::{tools::{colors::{HOVER_COLOR, NO_CHANGE_COLOR, PRESSED_COLOR}, components::Shape}, plugins::global_gizmo_plugin::Gizmo};
 use super::components::{Face, Part};
 use crate::ui::ui_button_systems::EditorMode;
 
