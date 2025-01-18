@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 // Button types for different CAD operations
-#[derive(Component)]
+#[derive(Component, Copy, Clone)]
 pub enum ToolbarButtonType {
     Extrude,
     CreateVertex,
