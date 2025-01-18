@@ -5,13 +5,11 @@ use crate::ui::ui_button_systems::EditorMode;
 
 pub fn update_materials_system(
     pointers: Query<&PointerInteraction>,
-    mut mesh_query: Query<(&mut MeshMaterial3d<StandardMaterial>, &Mesh3d), Without<Gizmo>>,
+    mut mesh_query: Query<(Entity, &mut MeshMaterial3d<StandardMaterial>, &Face, &Parent)>,
+    mut part_query: Query<&Part>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    buttons: Res<ButtonInput<MouseButton>>,
-    selection_mode: Res<EditorMode>, // EditorMode is a custom resource that tracks the current select mode
+    selection_mode: Res<EditorMode>,
 ) {
-
-    // Only allow selection in Select mode
     if *selection_mode != EditorMode::SelectFace {
         return;
     }
@@ -19,60 +17,72 @@ pub fn update_materials_system(
     let no_change_matl = materials.add(NO_CHANGE_COLOR);
     let hover_matl = materials.add(HOVER_COLOR);
     let pressed_matl = materials.add(PRESSED_COLOR);
-    let mut interacted_entities = Vec::new();
 
-    // First, set all materials to default
-    for (mut material, _) in mesh_query.iter_mut() {
-        material.0 = no_change_matl.clone();
+    // First set all materials to their default state
+    for (entity, mut material, face, parent) in mesh_query.iter_mut() {
+        if let Ok(part) = part_query.get(parent.get()) {
+            // Check if this face is selected
+            let is_selected = part.selected_faces.iter().any(|selected_face| selected_face == face);
+            material.0 = if is_selected {
+                pressed_matl.clone()
+            } else {
+                no_change_matl.clone()
+            };
+        }
     }
 
-     // Handle active interactions
-     for interaction in pointers.iter() {
-        if let Some((entity, hit)) = interaction.get_nearest_hit() {
-            interacted_entities.push(entity);
-            
-            if let Ok((mut material, mesh)) = mesh_query.get_mut(*entity) {
-                material.0 = if buttons.pressed(MouseButton::Left) {
-                    pressed_matl.clone()
-                } else {
-                    hover_matl.clone()
-                };
-                println!("Interacting with mesh: {:?}", mesh.0);
+    // Then handle hover states
+    for interaction in pointers.iter() {
+        if let Some((hovered_entity, _)) = interaction.get_nearest_hit() {
+            if let Ok((_, mut material, face, parent)) = mesh_query.get_mut(*hovered_entity) {
+                if let Ok(part) = part_query.get(parent.get()) {
+                    // Only show hover if not selected
+                    if !part.selected_faces.iter().any(|selected_face| selected_face == face) {
+                        material.0 = hover_matl.clone();
+                    }
+                }
             }
         }
-    };
+    }
 }
 
 
 pub fn handle_face_selection(
     mouse: Res<ButtonInput<MouseButton>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
     pointers: Query<&PointerInteraction>,
-    mut face_query: Query<(&mut MeshMaterial3d<StandardMaterial>, &Face, &Parent)>,
+    face_query: Query<(&Face, &Parent)>,
     mut part_query: Query<&mut Part>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     selection_mode: Res<EditorMode>,
 ) {
-    // Only process when left mouse button is just pressed
-    if !mouse.pressed(MouseButton::Left) {
-        return;
-    }
-
     if *selection_mode != EditorMode::SelectFace {
         return;
     }
-    for interaction in pointers.iter() {
-        // Similar to draw_mesh_intersections, get the nearest hit
-        if let Some((entity, hit)) = interaction.get_nearest_hit() {
-            if let Ok((mut material, face, parent)) = face_query.get_mut(entity.clone()) {
-                // Update material
-                let pressed_matl = materials.add(PRESSED_COLOR);
-                material.0 = pressed_matl.clone();
 
-                // Update selected faces in parent Part
+    // Only process when left mouse button is just pressed
+    if !mouse.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    let multi_select = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
+
+    for interaction in pointers.iter() {
+        if let Some((entity, _)) = interaction.get_nearest_hit() {
+            if let Ok((face, parent)) = face_query.get(*entity) {
                 if let Ok(mut part) = part_query.get_mut(parent.get()) {
-                    part.selected_faces.clear();
-                    part.selected_faces.push(face.clone());
-                    println!("Selected faces: {:?}", part.selected_faces);
+                    // If not multi-selecting, clear previous selections
+                    if !multi_select {
+                        part.selected_faces.clear();
+                        part.selected_faces.push(face.clone());
+                    } else {
+                        // In multi-select mode, toggle the face selection
+                        if let Some(index) = part.selected_faces.iter().position(|f| f == face) {
+                            part.selected_faces.remove(index);
+                        } else {
+                            part.selected_faces.push(face.clone());
+                        }
+                    }
+                    println!("Selected faces count: {}", part.selected_faces.len());
                 }
             }
         }

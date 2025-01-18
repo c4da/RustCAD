@@ -36,9 +36,6 @@ pub fn create_3d_object_system(
 
     // Create parent entity with Part component
     let mut part = Part::new();
-    part.vertices = vertices.clone();
-    part.edges = edges.clone();
-    part.faces = faces.clone();
 
     let parent = commands.spawn((
         Transform::from_xyz(0.0, 0.5, 0.0),

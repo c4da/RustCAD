@@ -57,7 +57,7 @@ impl Edge {
     
 }
 
-#[derive(Component, Clone, Debug, PartialEq)]
+#[derive(Component, Clone, Debug)]
 pub struct Face {
     pub vertices: Vec<Vertex>,
     pub edges: Vec<Edge>,
@@ -75,6 +75,29 @@ impl Face {
             edges: self.edges.clone(),
             normal: self.normal.clone(),
         }
+    }
+}
+
+impl PartialEq for Face {
+    fn eq(&self, other: &Self) -> bool {
+        // Two faces are equal if they have the same vertices (in any order)
+        // and the same normal direction
+        if self.vertices.len() != other.vertices.len() {
+            return false;
+        }
+
+        // Check if normals are approximately equal (for floating point comparison)
+        if (self.normal - other.normal).length_squared() > 0.0001 {
+            return false;
+        }
+
+        // Check if all vertices in self are present in other
+        self.vertices.iter().all(|v1| {
+            other.vertices.iter().any(|v2| {
+                // Compare vertex coordinates with some tolerance for floating point
+                (v1.coordinates - v2.coordinates).length_squared() < 0.0001
+            })
+        })
     }
 }
 

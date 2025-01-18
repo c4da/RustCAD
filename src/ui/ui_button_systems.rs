@@ -83,6 +83,7 @@ pub fn button_action_system(
     >,
     mut button_events: EventWriter<ToolbarAction>,
     mut mode: ResMut<EditorMode>,
+    mut part_query: Query<&mut Part>,
 ) {
     for (interaction, button_type, toggleable) in &mut interaction_query {
         if *interaction == Interaction::Pressed {
@@ -95,18 +96,42 @@ pub fn button_action_system(
                         match button_type {
                             ToolbarButtonType::SelectEdgeMode => {
                                 *mode = EditorMode::SelectEdge;
+                                // Clear all selections when switching modes
+                                for mut part in part_query.iter_mut() {
+                                    part.selected_faces.clear();
+                                    part.selected_edges.clear();
+                                    part.selected_vertices.clear();
+                                }
                                 button_events.send(ToolbarAction::SelectEdgeMode);
                             }
                             ToolbarButtonType::SelectFaceMode => {
                                 *mode = EditorMode::SelectFace;
+                                // Clear all selections when switching modes
+                                for mut part in part_query.iter_mut() {
+                                    part.selected_faces.clear();
+                                    part.selected_edges.clear();
+                                    part.selected_vertices.clear();
+                                }
                                 button_events.send(ToolbarAction::SelectFaceMode);
                             }
                             ToolbarButtonType::RotatePart => {
                                 *mode = EditorMode::RotatePart;
+                                // Clear all selections when switching modes
+                                for mut part in part_query.iter_mut() {
+                                    part.selected_faces.clear();
+                                    part.selected_edges.clear();
+                                    part.selected_vertices.clear();
+                                }
                                 button_events.send(ToolbarAction::RotatePart);
                             }
                             ToolbarButtonType::MoveFace => {
                                 *mode = EditorMode::MoveFace;
+                                // Clear all selections when switching modes
+                                for mut part in part_query.iter_mut() {
+                                    part.selected_faces.clear();
+                                    part.selected_edges.clear();
+                                    part.selected_vertices.clear();
+                                }
                                 button_events.send(ToolbarAction::MoveFace);
                             }
                             _ => {}

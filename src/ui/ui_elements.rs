@@ -1,9 +1,7 @@
 use bevy::prelude::*;
 use bevy::utils::warn;
-use crate::part::components::*;
 use crate::part;
-use crate::tools::mesh_tools::{get_vertices, create_vertex_dummies};
-use crate::tools::colors::{PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
+use crate::tools::colors::*;
 use super::components::*;
 
 // Blender-like UI Constants
@@ -14,12 +12,6 @@ const TEXT_SIZE: f32 = 14.0;
 const HEADER_TEXT_SIZE: f32 = 13.0;
 const PANEL_PADDING: f32 = 5.0;
 const SECTION_SPACING: f32 = 10.0;
-
-// Blender-like Colors
-const BG_COLOR: Color = Color::rgb(0.137, 0.137, 0.137);        // #232323
-const HEADER_BG: Color = Color::rgb(0.157, 0.157, 0.157);      // #282828
-const BORDER_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);         // #1A1A1A
-const TEXT_COLOR: Color = Color::rgb(0.8, 0.8, 0.8);           // #CCCCCC
 
 // Panel dimensions
 const TOP_BAR_HEIGHT: f32 = 32.0;
@@ -47,12 +39,15 @@ impl BlenderTextBundle {
 }
 
 pub fn setup_ui(mut commands: Commands) {
-    // Root UI container - no background to allow viewport to show through
-    commands.spawn(Node {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        ..default()
-    })
+    // Create a viewport entity that will not block picking
+    commands.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            ..default()
+        },
+        PickingBehavior::IGNORE,
+    ))
     .with_children(|parent| {
         // Top bar
         parent.spawn((
@@ -65,6 +60,7 @@ pub fn setup_ui(mut commands: Commands) {
                 ..default()
             },
             BackgroundColor(HEADER_BG),
+            PickingBehavior::IGNORE,
         ))
         .with_children(|parent| {
             setup_top_toolbar(parent);
@@ -84,6 +80,7 @@ pub fn setup_ui(mut commands: Commands) {
             },
             BackgroundColor(BG_COLOR),
             BorderColor(BORDER_COLOR),
+            PickingBehavior::IGNORE,
         ))
         .with_children(|parent| {
             setup_side_toolbar(parent);
@@ -103,6 +100,7 @@ pub fn setup_ui(mut commands: Commands) {
             },
             BackgroundColor(BG_COLOR),
             BorderColor(BORDER_COLOR),
+            PickingBehavior::IGNORE,
         ))
         .with_children(|parent| {
             setup_properties_panel(parent);

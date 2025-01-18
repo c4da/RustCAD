@@ -12,19 +12,18 @@ use tools::colors;
 use part::components::ExtrusionParams;
 use part::components::Part;
 use ui::{ui_elements::ToolbarAction, EditorMode};
-use part::mouse_part_systems::{handle_face_selection, update_materials_system, draw_mesh_intersections};
 use view::PanOrbitCamera;
 
-#[derive(Component)]
-struct CameraGizmo;
+// #[derive(Component)]
+// struct CameraGizmo;
 
 // inspector for debugging
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-#[derive(Resource, Default)]
-struct GizmoState {
-    rotation: Quat,
-}
+// #[derive(Resource, Default)]
+// struct GizmoState {
+//     rotation: Quat,
+// }
 
 fn main() {
     App::new()
@@ -37,7 +36,7 @@ fn main() {
         })
         .init_gizmo_group::<MyRoundGizmos>()
         .init_resource::<EditorMode>()
-        .init_resource::<GizmoState>()
+        // .init_resource::<GizmoState>()
         // .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, 
         (setup_scene, 
@@ -45,17 +44,18 @@ fn main() {
             ))
         .add_systems(Update, (
             view::pan_orbit_camera.run_if(any_with_component::<view::PanOrbitCamera>),
+            // UI systems
             ui::button_highlight_system,
-            part::draw_mesh_intersections,
-            part::handle_face_selection,
-            part::update_materials_system,
-            part::rotate,
             ui::button_action_system,
             ui::handle_toolbar_actions,
             ui::update_selection_mode_buttons,
+            // Part interaction systems in specific order
+            part::mouse_part_systems::handle_face_selection,
+            part::mouse_part_systems::update_materials_system.after(part::mouse_part_systems::handle_face_selection),
+            part::mouse_part_systems::draw_mesh_intersections,
+            part::mouse_part_systems::rotate,
             draw_gizmos,
-            // update_gizmo_transform.after(part::rotate), // Run after rotate to avoid conflicts
-        ))
+        ).chain())
         .run();
 }
 
