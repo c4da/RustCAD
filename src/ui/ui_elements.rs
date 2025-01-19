@@ -19,14 +19,14 @@ const LEFT_TOOLBAR_WIDTH: f32 = 160.0;
 const RIGHT_PANEL_WIDTH: f32 = 240.0;
 
 #[derive(Bundle)]
-struct BlenderTextBundle {
+pub struct CustomTextBundle {
     text: Text,
     font: TextFont,
     color: TextColor,
 }
 
-impl BlenderTextBundle {
-    fn new(label: &str, size: f32) -> Self {
+impl CustomTextBundle {
+    pub fn new(label: &str, size: f32) -> Self {
         Self {
             text: Text::new(label),
             font: TextFont {
@@ -128,7 +128,7 @@ fn setup_top_toolbar(parent: &mut ChildBuilder) {
             ToolbarButton,
         ))
         .with_children(|parent| {
-            parent.spawn(BlenderTextBundle::new(item, HEADER_TEXT_SIZE));
+            parent.spawn(CustomTextBundle::new(item, HEADER_TEXT_SIZE));
         });
     }
 }
@@ -149,7 +149,7 @@ fn setup_properties_panel(parent: &mut ChildBuilder) {
         BorderColor(BORDER_COLOR),
     ))
     .with_children(|parent| {
-        parent.spawn(BlenderTextBundle::new("Properties", HEADER_TEXT_SIZE));
+        parent.spawn(CustomTextBundle::new("Properties", HEADER_TEXT_SIZE));
     });
 }
 
@@ -216,7 +216,7 @@ fn spawn_tool_section(parent: &mut ChildBuilder, title: &str, tools: &[(&str, To
             BorderColor(BORDER_COLOR),
         ))
         .with_children(|parent| {
-            parent.spawn(BlenderTextBundle::new(title, HEADER_TEXT_SIZE));
+            parent.spawn(CustomTextBundle::new(title, HEADER_TEXT_SIZE));
         });
 
         // Tools
@@ -258,7 +258,7 @@ fn spawn_tool_button(parent: &mut ChildBuilder, label: &str, button_type: Toolba
     }
 
     button.with_children(|parent| {
-        parent.spawn(BlenderTextBundle::new(label, TEXT_SIZE));
+        parent.spawn(CustomTextBundle::new(label, TEXT_SIZE));
     });
 }
 

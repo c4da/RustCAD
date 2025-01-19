@@ -7,6 +7,7 @@ mod plugins;
 use std::f32::consts::PI;
 
 use crate::plugins::global_gizmo_plugin::GlobalGizmoPlugin;
+use crate::plugins::ai_console::AiConsolePlugin;
 use bevy::{prelude::*, color::palettes::css::*};
 use tools::colors;
 use part::components::ExtrusionParams;
@@ -28,7 +29,10 @@ use view::PanOrbitCamera;
 fn main() {
     App::new()
         // MeshPickingPlugin is not a default plugin
-        .add_plugins((DefaultPlugins, MeshPickingPlugin, GlobalGizmoPlugin))
+        .add_plugins((DefaultPlugins, 
+                    MeshPickingPlugin,
+                    GlobalGizmoPlugin,
+                    AiConsolePlugin,))
         .add_event::<ToolbarAction>()
         .insert_resource(ExtrusionParams {
             direction: Vec3::Y,
