@@ -3,11 +3,13 @@ mod ui;
 mod view;
 mod part;
 mod plugins;
+mod ai;
 
 use std::f32::consts::PI;
 
 use crate::plugins::global_gizmo_plugin::GlobalGizmoPlugin;
 use crate::plugins::ai_console::AiConsolePlugin;
+
 use bevy::{prelude::*, color::palettes::css::*};
 use tools::colors;
 use part::components::ExtrusionParams;

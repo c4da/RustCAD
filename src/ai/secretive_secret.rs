@@ -1,0 +1,1 @@
+pub static API_KEY: &str = "AIzaSyBHPKUYmiXJrjQRHX9Plg8oJ2NS1v3OtLg";

@@ -1,12 +1,20 @@
 pub struct AiConsolePlugin;
-use crate::{part, 
-            tools::{self, colors::{BORDER_COLOR, NORMAL_BUTTON}},
-            ui::{self, ui_elements::{CustomTextBundle}},
+use futures::channel::mpsc;
+use futures::SinkExt;
+use tokio::runtime::Runtime;
+use std::future::Future;
+
+use crate::{ai::{
+                ai_client::AiClient,
+                json_parser::{self, LlmCubeCommand},
+                secretive_secret::API_KEY,
+            },
+            part, 
+            tools::{colors::{BORDER_COLOR, NORMAL_BUTTON}},
+            ui::{ui_elements::CustomTextBundle}
         };
 
-use bevy::{prelude::*, color::palettes::css::*, input::keyboard::KeyCode, time::Time};
-use bevy_inspector_egui::egui::epaint::text::cursor;
-use tools::colors;
+use bevy::{input::keyboard::KeyCode, prelude::*, time::Time};
 
 #[derive(Component)]
 struct CursorBlink {
@@ -14,29 +22,70 @@ struct CursorBlink {
     timer: Timer,
 }
 
-#[derive(Component, Resource, Default)]
+#[derive(Component, Resource, Default, Clone)]
 struct ConsoleInput(String);
+
+#[derive(Resource)]
+struct AsyncRuntime(Runtime);
+
+// Component to store the async task
+#[derive(Component)]
+struct AsyncApiTask {
+    input: String,
+    client: AiClient,
+}
 
 impl Plugin for AiConsolePlugin {
     fn build(&self, app: &mut App) {
+        // Create a single runtime for async operations
+        let runtime = Runtime::new().expect("Failed to create Tokio runtime");
+        
         app.insert_resource(ConsoleInput(String::new()))
+            .insert_resource(AiClient::new(API_KEY.to_string()))
+            .insert_resource(AsyncRuntime(runtime))
             .add_systems(Startup, setup_console_ui)
             .add_systems(Update, (
-                handle_console_input,
                 button_interaction_system,
                 keyboard_input_system,
                 cursor_blink_system,
+                handle_api_response,
             ));
     }
 }
 
-fn keyboard_input_system(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut text_query: Query<&mut Text, With<ConsoleInputField>>,
-    mut console_input: ResMut<ConsoleInput>,
+fn handle_api_response(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    tasks: Query<(Entity, &AsyncApiTask)>,
+    runtime: Res<AsyncRuntime>,
+) {
+    for (entity, task) in tasks.iter() {
+        let result = runtime.0.block_on(async {
+            task.client.call_llm_api(&task.input).await
+        });
+
+        match result {
+            Ok(response) => {
+                let command = json_parser::parse_llm_output(&response);
+                process_console_ai_command(&command, &mut commands, &mut meshes, &mut materials);
+            }
+            Err(e) => {
+                println!("Error calling LLM API: {:?}", e);
+            }
+        }
+
+        commands.entity(entity).despawn();
+    }
+}
+
+fn keyboard_input_system(
+    mut commands: Commands,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut text_query: Query<&mut Text, With<ConsoleInputField>>,
+    mut console_input: ResMut<ConsoleInput>,
+    ai_client: Res<AiClient>,
+    tasks: Query<Entity, With<AsyncApiTask>>,
 ) {
     if let Ok(mut text) = text_query.get_single_mut() {
         // Handle backspace
@@ -49,9 +98,20 @@ fn keyboard_input_system(
 
         // Handle Enter key
         if keys.just_pressed(KeyCode::Enter) {
-            console_input.0 = text.0.clone();
-            text.0.clear();
-            process_console_command(&console_input.0, &mut commands, &mut meshes, &mut materials);
+            // Only process if there's no pending task
+            if tasks.iter().next().is_none() {
+                println!("keyboard_input_system -> Submitting console input: {}", text.0);
+                console_input.0 = text.0.clone();
+                text.0.clear();
+
+                let task = AsyncApiTask {
+                    input: console_input.0.clone(),
+                    client: ai_client.clone(),
+                };
+
+                // Spawn an entity to track the task
+                commands.spawn(task);
+            }
             return;
         }
 
@@ -82,18 +142,18 @@ fn keyboard_input_system(
         }
 
         // Handle numbers
-        // let number_keys = [
-        //     (KeyCode::Numpad1, '1'), (KeyCode::Key2, '2'), (KeyCode::Key3, '3'),
-        //     (KeyCode::Numpad4, '4'), (KeyCode::Key5, '5'), (KeyCode::Key6, '6'),
-        //     (KeyCode::Numpad7, '7'), (KeyCode::Key8, '8'), (KeyCode::Key9, '9'),
-        //     (KeyCode::Key0, '0'),
-        // ];
+        let number_keys = [
+            (KeyCode::Numpad1, '1'), (KeyCode::Numpad2, '2'), (KeyCode::Numpad3, '3'),
+            (KeyCode::Numpad4, '4'), (KeyCode::Numpad5, '5'), (KeyCode::Numpad6, '6'),
+            (KeyCode::Numpad7, '7'), (KeyCode::Numpad8, '8'), (KeyCode::Numpad9, '9'),
+            (KeyCode::Numpad0, '0'),
+        ];
 
-        // for (key, c) in number_keys.iter() {
-        //     if keys.just_pressed(*key) {
-        //         text.0.push(*c);
-        //     }
-        // }
+        for (key, c) in number_keys.iter() {
+            if keys.just_pressed(*key) {
+                text.0.push(*c);
+            }
+        }
 
         // Handle special characters
         if keys.just_pressed(KeyCode::Space) {
@@ -111,39 +171,36 @@ fn button_interaction_system(
     for (interaction, mut color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
-                *color = BackgroundColor::from(Color::rgb(0.35, 0.35, 0.35));
+                *color = BackgroundColor(Color::srgb(0.35, 0.35, 0.35));
             }
             Interaction::Hovered => {
-                *color = BackgroundColor::from(Color::rgb(0.25, 0.25, 0.25));
+                *color = BackgroundColor(Color::srgb(0.25, 0.25, 0.25));
             }
             Interaction::None => {
-                *color = BackgroundColor::from(NORMAL_BUTTON);
+                *color = BackgroundColor(NORMAL_BUTTON);
             }
         }
     }
 }
 
-fn setup_console_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<ColorMaterial>>) {
-    // commands.spawn(UiCameraBundle::default());
-
-    // Console container
+fn setup_console_ui(mut commands: Commands) {
     let mut node = Node::default();
     node.position_type = PositionType::Absolute;
     node.bottom = Val::Px(20.0);
-    node.left = Val::Percent(30.0); // Center by starting at 30%
-    node.width = Val::Percent(40.0);
-    node.height = Val::Px(40.0);
-    node.flex_direction = FlexDirection::Column;
+    node.left = Val::Percent(33.0);
+    node.width = Val::Percent(33.0);
+    node.height = Val::Px(45.0);
+    node.flex_direction = FlexDirection::Row;
 
     commands.spawn((
         node,
-        BackgroundColor::from(Color::rgb(0.1, 0.1, 0.1)),
+        BackgroundColor(Color::srgb(0.1, 0.1, 0.1)),
         PickingBehavior::IGNORE,
     ))
     .with_children(|parent| {
         // Text input field container
         let mut input_node = Node::default();
-        input_node.width = Val::Percent(40.0);
+        input_node.width = Val::Percent(80.0);
         input_node.height = Val::Px(40.0);
         input_node.margin = UiRect::all(Val::Px(5.0));
         input_node.padding = UiRect::horizontal(Val::Px(8.0));
@@ -154,7 +211,7 @@ fn setup_console_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut 
 
         parent.spawn((
             input_node,
-            BackgroundColor::from(Color::rgb(0.15, 0.15, 0.15)),
+            BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
             BorderColor::from(BORDER_COLOR),
         ))
         .with_children(|parent| {
@@ -176,7 +233,7 @@ fn setup_console_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut 
 
         // Submit button
         let mut button_node = Node::default();
-        button_node.width = Val::Px(100.0);
+        button_node.width = Val::Px(80.0);
         button_node.height = Val::Px(30.0);
         button_node.margin = UiRect::all(Val::Px(5.0));
         button_node.padding = UiRect::horizontal(Val::Px(8.0));
@@ -186,12 +243,11 @@ fn setup_console_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut 
         parent.spawn((
             Button,
             button_node,
-            BackgroundColor::from(NORMAL_BUTTON),
-            BorderColor::from(BORDER_COLOR),
+            BackgroundColor(Color::srgb(0.1, 0.1, 0.1)),
             ConsoleSubmitButton,
         ))
         .with_children(|parent| {
-            parent.spawn(CustomTextBundle::new("Submit", 20.0));
+            parent.spawn(CustomTextBundle::new("Submit", 10.0));
         });
     });
 }
@@ -201,30 +257,6 @@ struct ConsoleInputField;
 
 #[derive(Component)]
 struct ConsoleSubmitButton;
-
-fn handle_console_input(
-    mut commands: Commands,
-    mut interaction_query: Query<(&Interaction, &ConsoleSubmitButton), Changed<Interaction>>,
-    mut input_query: Query<&mut Text, With<ConsoleInputField>>,
-    mut console_input: ResMut<ConsoleInput>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (interaction, _) in interaction_query.iter_mut() {
-        if *interaction == Interaction::Pressed {
-            if let Ok(mut text) = input_query.get_single_mut() {
-                // Get the current text value and store it
-                console_input.0 = text.0.clone();
-                
-                // Clear the input field
-                text.0.clear();
-                
-                // Process the command
-                process_console_command(&console_input.0, &mut commands, &mut meshes, &mut materials);
-        }
-    }
-    }
-}
 
 fn cursor_blink_system(
     time: Res<Time>,
@@ -244,28 +276,34 @@ fn cursor_blink_system(
     }
 }
 
-fn process_console_command(
-    command: &str, 
-    commands: &mut Commands, 
+fn create_cube_from_command(command: &LlmCubeCommand, commands: &mut Commands, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<StandardMaterial>>) {
+    let mut points = vec![
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(1.0, 0.0, 0.0),
+        Vec3::new(1.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        Vec3::new(0.0, 1.0, 1.0),
+        Vec3::new(1.0, 0.0, 1.0),
+        Vec3::new(1.0, 1.0, 1.0),
+        Vec3::new(0.0, 1.0, 1.0),
+    ];
+
+    for point in &mut points {
+        *point += command.get_vector_from_origin();
+    }
+
+    part::create_3d_object_system(commands, meshes, materials, points);
+}
+
+fn process_console_ai_command(
+    command: &LlmCubeCommand,
+    commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>
 ) {
-    let command = command.trim();
-    
-    match command {
+    match command.get_command() {
         "create cube" => {
-            let points = vec![
-                Vec3::new(1.0, 1.0, 1.0),
-                Vec3::new(2.0, 1.0, 1.0),
-                Vec3::new(2.0, 2.0, 1.0),
-                Vec3::new(1.0, 2.0, 1.0),
-                Vec3::new(1.0, 1.0, 2.0),
-                Vec3::new(2.0, 1.0, 2.0),
-                Vec3::new(2.0, 2.0, 2.0),
-                Vec3::new(1.0, 2.0, 2.0),
-            ];
-
-            part::create_3d_object_system(commands, meshes, materials, points);
+            create_cube_from_command(command, commands, meshes, materials);
             println!("Created cube");
         }
         "help" => {
