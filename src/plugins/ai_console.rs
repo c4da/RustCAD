@@ -1,12 +1,13 @@
 pub struct AiConsolePlugin;
 use crate::{part, 
-            tools::{self, colors::{BORDER_COLOR, NORMAL_BUTTON}},
-            ui::{self, ui_elements::{CustomTextBundle}},
+            tools::{colors::{BORDER_COLOR, NORMAL_BUTTON}},
+            ui::{ui_elements::{CustomTextBundle}},
         };
 
-use bevy::{prelude::*, color::palettes::css::*, input::keyboard::KeyCode, time::Time};
-use bevy_inspector_egui::egui::epaint::text::cursor;
-use tools::colors;
+use bevy::{prelude::*, time::Time};
+use bevy::input::ButtonState;
+use bevy::input::keyboard::{Key, KeyboardInput};
+
 
 #[derive(Component)]
 struct CursorBlink {
@@ -15,11 +16,11 @@ struct CursorBlink {
 }
 
 #[derive(Component, Resource, Default)]
-struct ConsoleInput(String);
+struct ConsoleInput(String, bool);
 
 impl Plugin for AiConsolePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(ConsoleInput(String::new()))
+        app.insert_resource(ConsoleInput(String::new(), false))
             .add_systems(Startup, setup_console_ui)
             .add_systems(Update, (
                 handle_console_input,
@@ -31,7 +32,7 @@ impl Plugin for AiConsolePlugin {
 }
 
 fn keyboard_input_system(
-    keys: Res<ButtonInput<KeyCode>>,
+    mut evr_kbd: EventReader<KeyboardInput>,
     mut text_query: Query<&mut Text, With<ConsoleInputField>>,
     mut console_input: ResMut<ConsoleInput>,
     mut commands: Commands,
@@ -39,65 +40,43 @@ fn keyboard_input_system(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     if let Ok(mut text) = text_query.get_single_mut() {
-        // Handle backspace
-        if keys.just_pressed(KeyCode::Backspace) {
-            if !text.0.is_empty() {
-                text.0.pop();
-            }
-            return;
-        }
-
-        // Handle Enter key
-        if keys.just_pressed(KeyCode::Enter) {
-            console_input.0 = text.0.clone();
-            text.0.clear();
-            process_console_command(&console_input.0, &mut commands, &mut meshes, &mut materials);
-            return;
-        }
-
-        // Handle text input
-        let shift_pressed = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
-
-        // Handle letters
-        let letter_keys = [
-            (KeyCode::KeyA, 'a'), (KeyCode::KeyB, 'b'), (KeyCode::KeyC, 'c'),
-            (KeyCode::KeyD, 'd'), (KeyCode::KeyE, 'e'), (KeyCode::KeyF, 'f'),
-            (KeyCode::KeyG, 'g'), (KeyCode::KeyH, 'h'), (KeyCode::KeyI, 'i'),
-            (KeyCode::KeyJ, 'j'), (KeyCode::KeyK, 'k'), (KeyCode::KeyL, 'l'),
-            (KeyCode::KeyM, 'm'), (KeyCode::KeyN, 'n'), (KeyCode::KeyO, 'o'),
-            (KeyCode::KeyP, 'p'), (KeyCode::KeyQ, 'q'), (KeyCode::KeyR, 'r'),
-            (KeyCode::KeyS, 's'), (KeyCode::KeyT, 't'), (KeyCode::KeyU, 'u'),
-            (KeyCode::KeyV, 'v'), (KeyCode::KeyW, 'w'), (KeyCode::KeyX, 'x'),
-            (KeyCode::KeyY, 'y'), (KeyCode::KeyZ, 'z'),
-        ];
-
-        for (key, c) in letter_keys.iter() {
-            if keys.just_pressed(*key) {
-                if shift_pressed {
-                    text.0.push(c.to_ascii_uppercase());
-                } else {
-                    text.0.push(*c);
+        for ev in evr_kbd.read() {
+            if ev.state == ButtonState::Released {
+                if ev.logical_key == Key::Control {
+                    console_input.1 = false;
                 }
+                continue;
             }
-        }
-
-        // Handle numbers
-        // let number_keys = [
-        //     (KeyCode::Numpad1, '1'), (KeyCode::Key2, '2'), (KeyCode::Key3, '3'),
-        //     (KeyCode::Numpad4, '4'), (KeyCode::Key5, '5'), (KeyCode::Key6, '6'),
-        //     (KeyCode::Numpad7, '7'), (KeyCode::Key8, '8'), (KeyCode::Key9, '9'),
-        //     (KeyCode::Key0, '0'),
-        // ];
-
-        // for (key, c) in number_keys.iter() {
-        //     if keys.just_pressed(*key) {
-        //         text.0.push(*c);
-        //     }
-        // }
-
-        // Handle special characters
-        if keys.just_pressed(KeyCode::Space) {
-            text.0.push(' ');
+            match &ev.logical_key {
+                Key::Enter => {
+                    console_input.0 = text.0.clone();
+                    text.0.clear();
+                    process_console_command(&console_input.0, &mut commands, &mut meshes, &mut materials);
+                    return;
+                }
+                Key::Backspace => {
+                    text.0.pop();
+                    if console_input.1 {
+                        text.0.clear();
+                    }
+                }
+                Key::Space => {
+                    text.0.push(' ');
+                }
+                // Handle key presses that produce text characters
+                Key::Character(input) => {
+                    // Ignore any input that contains control (special) characters
+                    if console_input.1 {
+                        println!("Skipping due to Ctrl {:?}", input);
+                        continue;
+                    }
+                    text.0.push_str(&input);
+                }
+                Key::Control => {
+                    console_input.1 = true;
+                }
+                _ => {}
+            }
         }
     }
 }
@@ -111,10 +90,10 @@ fn button_interaction_system(
     for (interaction, mut color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
-                *color = BackgroundColor::from(Color::rgb(0.35, 0.35, 0.35));
+                *color = BackgroundColor::from(Color::srgb(0.35, 0.35, 0.35));
             }
             Interaction::Hovered => {
-                *color = BackgroundColor::from(Color::rgb(0.25, 0.25, 0.25));
+                *color = BackgroundColor::from(Color::srgb(0.25, 0.25, 0.25));
             }
             Interaction::None => {
                 *color = BackgroundColor::from(NORMAL_BUTTON);
@@ -123,7 +102,7 @@ fn button_interaction_system(
     }
 }
 
-fn setup_console_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup_console_ui(mut commands: Commands) {
     // commands.spawn(UiCameraBundle::default());
 
     // Console container
@@ -137,7 +116,7 @@ fn setup_console_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut 
 
     commands.spawn((
         node,
-        BackgroundColor::from(Color::rgb(0.1, 0.1, 0.1)),
+        BackgroundColor::from(Color::srgb(0.1, 0.1, 0.1)),
         PickingBehavior::IGNORE,
     ))
     .with_children(|parent| {
@@ -154,7 +133,7 @@ fn setup_console_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut 
 
         parent.spawn((
             input_node,
-            BackgroundColor::from(Color::rgb(0.15, 0.15, 0.15)),
+            BackgroundColor::from(Color::srgb(0.15, 0.15, 0.15)),
             BorderColor::from(BORDER_COLOR),
         ))
         .with_children(|parent| {
