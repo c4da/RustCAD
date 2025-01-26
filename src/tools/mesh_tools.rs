@@ -1,7 +1,6 @@
 
 //tools module
 use bevy::{
-    picking::pointer::PointerInteraction, 
     prelude::*,
     pbr::StandardMaterial,
     render::mesh::{Mesh, VertexAttributeValues},

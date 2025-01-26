@@ -1,6 +1,6 @@
 use crate::tools;
 
-use bevy::{prelude::*, color::palettes::css::*};
+use bevy::prelude::*;
 use tools::colors;
 
 /// The GizmoPlugin for displaying a transformation gizmo in a Bevy application.

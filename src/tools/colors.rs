@@ -10,9 +10,9 @@ pub const GREEN: Color = Color::srgb(0.0, 1.0, 0.0);
 pub const BLUE: Color = Color::srgb(0.0, 0.0, 1.0);
 
 //button colors
-pub const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
-pub const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
-pub const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
+pub const NORMAL_BUTTON_COLOR: Color = Color::srgb(0.15, 0.15, 0.15);
+pub const HOVERED_BUTTON_COLOR: Color = Color::srgb(0.25, 0.25, 0.25);
+pub const PRESSED_BUTTON_COLOR: Color = Color::srgb(0.35, 0.75, 0.35);
 
 //part colors
 pub const NO_CHANGE_COLOR: Color = Color::WHITE;
@@ -21,7 +21,8 @@ pub const HOVER_COLOR: Color = Color::srgb(CYAN_300.red, CYAN_300.green, CYAN_30
 pub const PRESSED_COLOR: Color = Color::srgb(YELLOW_300.red, YELLOW_300.green, YELLOW_300.blue);
 
 // Blender-like Colors
-pub const BG_COLOR: Color = Color::rgb(0.137, 0.137, 0.137);        // #232323
-pub const HEADER_BG: Color = Color::rgb(0.157, 0.157, 0.157);      // #282828
-pub const BORDER_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);         // #1A1A1A
-pub const TEXT_COLOR: Color = Color::rgb(0.8, 0.8, 0.8);           // #CCCCCC
+pub const BG_COLOR: Color = Color::srgb(0.137, 0.137, 0.137);        // #232323
+pub const HEADER_BG: Color = Color::srgb(0.157, 0.157, 0.157);
+//BORDERLIKE COLOR      // #282828
+pub const NEAR_BLACK: Color = Color::srgb(0.1, 0.1, 0.1);         // #1A1A1A
+pub const TEXT_COLOR: Color = Color::srgb(0.8, 0.8, 0.8);           // #CCCCCC

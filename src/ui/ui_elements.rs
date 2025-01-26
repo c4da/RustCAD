@@ -1,11 +1,10 @@
 use bevy::prelude::*;
 use bevy::utils::warn;
-use crate::part;
+use crate::part::{self, primitives};
 use crate::tools::colors::*;
 use super::components::*;
 
-// Blender-like UI Constants
-const BUTTON_WIDTH: f32 = 150.0;
+//UI Constants
 const BUTTON_HEIGHT: f32 = 28.0;
 const BUTTON_MARGIN: f32 = 2.0;
 const TEXT_SIZE: f32 = 14.0;
@@ -79,7 +78,7 @@ pub fn setup_ui(mut commands: Commands) {
                 ..default()
             },
             BackgroundColor(BG_COLOR),
-            BorderColor(BORDER_COLOR),
+            BorderColor(NEAR_BLACK),
             PickingBehavior::IGNORE,
         ))
         .with_children(|parent| {
@@ -99,7 +98,7 @@ pub fn setup_ui(mut commands: Commands) {
                 ..default()
             },
             BackgroundColor(BG_COLOR),
-            BorderColor(BORDER_COLOR),
+            BorderColor(NEAR_BLACK),
             PickingBehavior::IGNORE,
         ))
         .with_children(|parent| {
@@ -122,8 +121,8 @@ fn setup_top_toolbar(parent: &mut ChildBuilder) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(NORMAL_BUTTON),
-            BorderColor(BORDER_COLOR),
+            BackgroundColor(NORMAL_BUTTON_COLOR),
+            BorderColor(NEAR_BLACK),
             Interaction::None,
             ToolbarButton,
         ))
@@ -146,7 +145,7 @@ fn setup_properties_panel(parent: &mut ChildBuilder) {
             ..default()
         },
         BackgroundColor(HEADER_BG),
-        BorderColor(BORDER_COLOR),
+        BorderColor(NEAR_BLACK),
     ))
     .with_children(|parent| {
         parent.spawn(CustomTextBundle::new("Properties", HEADER_TEXT_SIZE));
@@ -213,7 +212,7 @@ fn spawn_tool_section(parent: &mut ChildBuilder, title: &str, tools: &[(&str, To
                 ..default()
             },
             BackgroundColor(HEADER_BG),
-            BorderColor(BORDER_COLOR),
+            BorderColor(NEAR_BLACK),
         ))
         .with_children(|parent| {
             parent.spawn(CustomTextBundle::new(title, HEADER_TEXT_SIZE));
@@ -246,8 +245,8 @@ fn spawn_tool_button(parent: &mut ChildBuilder, label: &str, button_type: Toolba
             align_items: AlignItems::Center,
             ..default()
         },
-        BackgroundColor(NORMAL_BUTTON),
-        BorderColor(BORDER_COLOR),
+        BackgroundColor(NORMAL_BUTTON_COLOR),
+        BorderColor(NEAR_BLACK),
         Interaction::None,
         ToolbarButton,
         button_type,
@@ -282,16 +281,7 @@ pub fn add_box(
 ) {
     warn(Result::Err("Adding box"));
 
-    let points = vec![
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(2.0, 0.0, 0.0),
-        Vec3::new(2.0, 2.0, 0.0),
-        Vec3::new(0.0, 2.0, 0.0),
-        Vec3::new(0.0, 0.0, 2.0),
-        Vec3::new(2.0, 0.0, 2.0),
-        Vec3::new(2.0, 2.0, 2.0),
-        Vec3::new(0.0, 2.0, 2.0),
-    ];
+    let points = primitives::CubePoints::get_points();
 
     part::create_3d_object_system(commands, meshes, materials, points);
 }

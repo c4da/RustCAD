@@ -6,8 +6,13 @@ use bevy::prelude::*;
 
 pub const INIT_MESSAGE: &str = "\
 If you receive a request to create a cube, parse it and return a JSON object with the following structure: \
-{\"command\": \"create cube\", \"parameters\": {\"x\": 0.0, \"y\": 0.0, \"z\": 0.0, \"width\": 1.0, \"height\": 1.0, \"depth\": 1.0}}. \
-Always respond with valid JSON in this exact format. Here is the prompt:";
+{\"command\": \"create cube\", \"parameters\": {\"x\": 0.0, \"y\": 0.0, \"z\": 0.0, \"width\": 1.0, \"height\": 1.0, \"depth\": 1.0}}
+
+If you receive a request to create multiple cubes, respond with a JSON array like this: \
+{\"command\": \"create cubes\", \"parameters\": [{\"x\": 0.0, \"y\": 0.0, \"z\": 0.0, \"width\": 1.0, \"height\": 1.0, \"depth\": 1.0}, \
+{\"x\": 1.0, \"y\": 1.0, \"z\": 1.0, \"width\": 1.0, \"height\": 1.0, \"depth\": 1.0}]}
+
+Always respond with valid JSON in the exact format shown above. Here is the prompt:";
 
 #[derive(Resource, Clone)]
 pub struct AiClient {
@@ -129,12 +134,11 @@ async fn handle_response(res: reqwest::Response) -> Result<String, Box<dyn Error
                 message: "Failed to extract text from response".to_string(),
             })?;
 
-        // Strip markdown code block if present
-        let text = raw_text
-            .trim()
-            .trim_start_matches("```json")
-            .trim_end_matches("```")
-            .trim();
+        // Clean response
+        let trimmed = raw_text.trim();
+        let without_markers = trimmed.trim_start_matches("```json").trim_end_matches("```");
+        let without_newlines = without_markers.replace("\n", "");
+        let text = without_newlines.trim();
 
         // Parse the text as JSON to validate it's a proper JSON response
         let json_value: Value = serde_json::from_str(text)
@@ -144,13 +148,38 @@ async fn handle_response(res: reqwest::Response) -> Result<String, Box<dyn Error
             })?;
 
         // Verify the JSON has the expected structure
-        if !json_value.is_object() 
-            || !json_value["command"].is_string() 
-            || !json_value["parameters"].is_object() {
+        if !json_value.is_object() || !json_value["command"].is_string() {
             return Err(Box::new(ApiError {
                 status,
                 message: "Response JSON missing required fields".to_string(),
             }));
+        }
+
+        // Check parameters based on command type
+        let command = json_value["command"].as_str().unwrap();
+        match command {
+            "create cube" => {
+                if !json_value["parameters"].is_object() {
+                    return Err(Box::new(ApiError {
+                        status,
+                        message: "Single cube parameters must be an object".to_string(),
+                    }));
+                }
+            },
+            "create cubes" => {
+                if !json_value["parameters"].is_array() {
+                    return Err(Box::new(ApiError {
+                        status,
+                        message: "Multiple cubes parameters must be an array".to_string(),
+                    }));
+                }
+            },
+            _ => {
+                return Err(Box::new(ApiError {
+                    status,
+                    message: format!("Unknown command: {}", command),
+                }));
+            }
         }
 
         Ok(text.to_string())

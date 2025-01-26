@@ -1,12 +1,12 @@
-use bevy::{color::palettes::tailwind::*, input::mouse::{self, MouseButtonInput}, picking::pointer::PointerInteraction, prelude::*};
-use crate::{tools::{colors::{HOVER_COLOR, NO_CHANGE_COLOR, PRESSED_COLOR}, components::Shape}, plugins::global_gizmo_plugin::Gizmo};
+use bevy::{color::palettes::tailwind::*, picking::pointer::PointerInteraction, prelude::*};
+use crate::tools::{colors::{HOVER_COLOR, NO_CHANGE_COLOR, PRESSED_COLOR}, components::Shape};
 use super::components::{Face, Part};
 use crate::ui::ui_button_systems::EditorMode;
 
 pub fn update_materials_system(
     pointers: Query<&PointerInteraction>,
     mut mesh_query: Query<(Entity, &mut MeshMaterial3d<StandardMaterial>, &Face, &Parent)>,
-    mut part_query: Query<&Part>,
+    part_query: Query<&Part>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     selection_mode: Res<EditorMode>,
 ) {
@@ -19,7 +19,7 @@ pub fn update_materials_system(
     let pressed_matl = materials.add(PRESSED_COLOR);
 
     // First set all materials to their default state
-    for (entity, mut material, face, parent) in mesh_query.iter_mut() {
+    for (_entity, mut material, face, parent) in mesh_query.iter_mut() {
         if let Ok(part) = part_query.get(parent.get()) {
             // Check if this face is selected
             let is_selected = part.selected_faces.iter().any(|selected_face| selected_face == face);

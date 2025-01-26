@@ -1,17 +1,15 @@
 pub struct AiConsolePlugin;
-use futures::channel::mpsc;
-use futures::SinkExt;
 use tokio::runtime::Runtime;
-use std::future::Future;
+use serde_json::Value;
 
 use crate::{ai::{
                 ai_client::AiClient,
                 json_parser::{self, LlmCubeCommand},
                 secretive_secret::API_KEY,
             },
-            part, 
-            tools::{colors::{BORDER_COLOR, NORMAL_BUTTON}},
-            ui::{ui_elements::CustomTextBundle}
+            part::{self, primitives}, 
+            tools::colors::{HOVERED_BUTTON_COLOR, NEAR_BLACK, NORMAL_BUTTON_COLOR, PRESSED_BUTTON_COLOR},
+            ui::ui_elements::CustomTextBundle
         };
 
 use bevy::{input::keyboard::KeyCode, prelude::*, time::Time};
@@ -67,8 +65,7 @@ fn handle_api_response(
 
         match result {
             Ok(response) => {
-                let command = json_parser::parse_llm_output(&response);
-                process_console_ai_command(&command, &mut commands, &mut meshes, &mut materials);
+                process_console_ai_command(&response, &mut commands, &mut meshes, &mut materials);
             }
             Err(e) => {
                 println!("Error calling LLM API: {:?}", e);
@@ -171,13 +168,13 @@ fn button_interaction_system(
     for (interaction, mut color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
-                *color = BackgroundColor(Color::srgb(0.35, 0.35, 0.35));
+                *color = BackgroundColor(PRESSED_BUTTON_COLOR);
             }
             Interaction::Hovered => {
-                *color = BackgroundColor(Color::srgb(0.25, 0.25, 0.25));
+                *color = BackgroundColor(HOVERED_BUTTON_COLOR);
             }
             Interaction::None => {
-                *color = BackgroundColor(NORMAL_BUTTON);
+                *color = BackgroundColor(NORMAL_BUTTON_COLOR);
             }
         }
     }
@@ -194,7 +191,7 @@ fn setup_console_ui(mut commands: Commands) {
 
     commands.spawn((
         node,
-        BackgroundColor(Color::srgb(0.1, 0.1, 0.1)),
+        BackgroundColor(NEAR_BLACK),
         PickingBehavior::IGNORE,
     ))
     .with_children(|parent| {
@@ -211,8 +208,8 @@ fn setup_console_ui(mut commands: Commands) {
 
         parent.spawn((
             input_node,
-            BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
-            BorderColor::from(BORDER_COLOR),
+            BackgroundColor(NORMAL_BUTTON_COLOR),
+            BorderColor::from(NEAR_BLACK),
         ))
         .with_children(|parent| {
             // Text input field
@@ -243,7 +240,7 @@ fn setup_console_ui(mut commands: Commands) {
         parent.spawn((
             Button,
             button_node,
-            BackgroundColor(Color::srgb(0.1, 0.1, 0.1)),
+            BackgroundColor(NEAR_BLACK),
             ConsoleSubmitButton,
         ))
         .with_children(|parent| {
@@ -277,16 +274,7 @@ fn cursor_blink_system(
 }
 
 fn create_cube_from_command(command: &LlmCubeCommand, commands: &mut Commands, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<StandardMaterial>>) {
-    let mut points = vec![
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(1.0, 0.0, 0.0),
-        Vec3::new(1.0, 1.0, 0.0),
-        Vec3::new(0.0, 1.0, 0.0),
-        Vec3::new(0.0, 1.0, 1.0),
-        Vec3::new(1.0, 0.0, 1.0),
-        Vec3::new(1.0, 1.0, 1.0),
-        Vec3::new(0.0, 1.0, 1.0),
-    ];
+    let mut points = primitives::CubePoints::get_points();
 
     for point in &mut points {
         *point += command.get_vector_from_origin();
@@ -295,16 +283,38 @@ fn create_cube_from_command(command: &LlmCubeCommand, commands: &mut Commands, m
     part::create_3d_object_system(commands, meshes, materials, points);
 }
 
+fn create_cubes_from_command(command: &Vec<LlmCubeCommand>, commands: &mut Commands, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<StandardMaterial>>) {
+    println!("Creating cubes");
+    let points = primitives::CubePoints::get_points();
+
+    command.iter().for_each(|cube_command| {
+        let mut cube_pos = points.clone();
+        for point in &mut cube_pos {
+            *point += cube_command.get_vector_from_origin();
+        }
+        part::create_3d_object_system(commands, meshes, materials, cube_pos);
+        print!("Created cube at: {:?}", cube_command.get_vector_from_origin());
+    });
+}
+
 fn process_console_ai_command(
-    command: &LlmCubeCommand,
+    llm_response: &String,
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>
 ) {
-    match command.get_command() {
+    let full_command: Value = serde_json::from_str(llm_response).unwrap();
+    let command: &str = Box::leak(full_command["command"].as_str().unwrap().to_string().into_boxed_str());
+    match command {
         "create cube" => {
-            create_cube_from_command(command, commands, meshes, materials);
+            let command = json_parser::parse_cube_command(&llm_response);
+            create_cube_from_command(&command, commands, meshes, materials);
             println!("Created cube");
+        }
+        "create cubes" => {
+            let command = json_parser::parse_cubes_command(&llm_response);
+            create_cubes_from_command(&command, commands, meshes, materials);
+            println!("Cubes created");
         }
         "help" => {
             println!("Available commands:");

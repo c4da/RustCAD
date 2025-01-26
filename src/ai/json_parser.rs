@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use bevy::math::Vec3;
 use serde::Deserialize;
 use serde_json::*;
@@ -66,7 +65,7 @@ impl LlmCubeCommand {
     }
 }
 
-pub fn parse_llm_output(json_str: &str) -> LlmCubeCommand {
+pub fn parse_cube_command(json_str: &str) -> LlmCubeCommand {
     println!("Parsing JSON: {}", json_str);
     let full_command: Value = serde_json::from_str(json_str).unwrap();
     let command = Box::leak(full_command["command"].as_str().unwrap().to_string().into_boxed_str());
@@ -81,3 +80,25 @@ pub fn parse_llm_output(json_str: &str) -> LlmCubeCommand {
     LlmCubeCommand::new(command, parameters)
 }
 
+pub fn parse_cubes_command(json_str: &str) -> Vec<LlmCubeCommand> {
+    println!("Parsing JSON: {}", json_str);
+    let mut vec: Vec<LlmCubeCommand> = Vec::new();
+    let full_command: Value = serde_json::from_str(json_str).unwrap();
+    let command = Box::leak(full_command["command"].as_str().unwrap().to_string().into_boxed_str());
+    
+    if let Some(params_array) = full_command["parameters"].as_array() {
+        for cube in params_array {
+            let parameters = (
+                cube.get("x").and_then(|v| v.as_f64()).unwrap() as f32,
+                cube.get("y").and_then(|v| v.as_f64()).unwrap() as f32,
+                cube.get("z").and_then(|v| v.as_f64()).unwrap() as f32,
+                cube.get("width").and_then(|v| v.as_f64()).unwrap() as f32,
+                cube.get("height").and_then(|v| v.as_f64()).unwrap() as f32,
+                cube.get("depth").and_then(|v| v.as_f64()).unwrap() as f32,
+            );
+            vec.push(LlmCubeCommand::new(command, parameters));
+        }
+    }
+    println!("Parsed cubes: {:?}", vec);
+    vec
+}
