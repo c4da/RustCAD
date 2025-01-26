@@ -7,7 +7,7 @@ use super::ui_elements::*;
 use crate::part::components::*;
 
 use crate::part;
-use crate::tools::colors::{PRESSED_BUTTON, HOVERED_BUTTON, NORMAL_BUTTON, RED};
+use crate::tools::colors::{PRESSED_BUTTON_COLOR, HOVERED_BUTTON_COLOR, NORMAL_BUTTON_COLOR, RED};
 use crate::ui::components::*;
 
 pub fn button_highlight_system(
@@ -36,7 +36,7 @@ pub fn button_highlight_system(
         match *interaction {
             Interaction::Pressed => {
                 // **text = "Press".to_string();
-                *color = PRESSED_BUTTON.into();
+                *color = PRESSED_BUTTON_COLOR.into();
                 border_color.0 = RED.into();
                 //Result::Err("xx")
                 warn(Result::Err(_text));
@@ -49,12 +49,12 @@ pub fn button_highlight_system(
             }
             Interaction::Hovered => {
                 // **text = "Hover".to_string();
-                *color = HOVERED_BUTTON.into();
+                *color = HOVERED_BUTTON_COLOR.into();
                 border_color.0 = Color::WHITE;
             }
             Interaction::None => {
                 // **text = "Button".to_string();
-                *color = NORMAL_BUTTON.into();
+                *color = NORMAL_BUTTON_COLOR.into();
                 border_color.0 = Color::BLACK;
             }
         }
@@ -239,33 +239,33 @@ pub fn update_selection_mode_buttons(
             ToolbarButtonType::SelectFaceMode => {
                 toggleable.is_active = matches!(*mode, EditorMode::SelectFace);
                 *color = match (*interaction, toggleable.is_active) {
-                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
-                    (_, true) => PRESSED_BUTTON.into(),
-                    _ => NORMAL_BUTTON.into(),
+                    (Interaction::Hovered, false) => HOVERED_BUTTON_COLOR.into(),
+                    (_, true) => PRESSED_BUTTON_COLOR.into(),
+                    _ => NORMAL_BUTTON_COLOR.into(),
                 };
             }
             ToolbarButtonType::SelectEdgeMode => {
                 toggleable.is_active = matches!(*mode, EditorMode::SelectEdge);
                 *color = match (*interaction, toggleable.is_active) {
-                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
-                    (_, true) => PRESSED_BUTTON.into(),
-                    _ => NORMAL_BUTTON.into(),
+                    (Interaction::Hovered, false) => HOVERED_BUTTON_COLOR.into(),
+                    (_, true) => PRESSED_BUTTON_COLOR.into(),
+                    _ => NORMAL_BUTTON_COLOR.into(),
                 };
             }
             ToolbarButtonType::RotatePart => {
                 toggleable.is_active = matches!(*mode, EditorMode::RotatePart);
                 *color = match (*interaction, toggleable.is_active) {
-                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
-                    (_, true) => PRESSED_BUTTON.into(),
-                    _ => NORMAL_BUTTON.into(),
+                    (Interaction::Hovered, false) => HOVERED_BUTTON_COLOR.into(),
+                    (_, true) => PRESSED_BUTTON_COLOR.into(),
+                    _ => NORMAL_BUTTON_COLOR.into(),
                 };
             }
             ToolbarButtonType::MoveFace => {
                 toggleable.is_active = matches!(*mode, EditorMode::MoveFace);
                 *color = match (*interaction, toggleable.is_active) {
-                    (Interaction::Hovered, false) => HOVERED_BUTTON.into(),
-                    (_, true) => PRESSED_BUTTON.into(),
-                    _ => NORMAL_BUTTON.into(),
+                    (Interaction::Hovered, false) => HOVERED_BUTTON_COLOR.into(),
+                    (_, true) => PRESSED_BUTTON_COLOR.into(),
+                    _ => NORMAL_BUTTON_COLOR.into(),
                 };
             }
             _ => {}

@@ -3,17 +3,18 @@ mod ui;
 mod view;
 mod part;
 mod plugins;
+mod ai;
 
 use std::f32::consts::PI;
 
 use crate::plugins::global_gizmo_plugin::GlobalGizmoPlugin;
 use crate::plugins::ai_console::AiConsolePlugin;
+
 use bevy::{prelude::*, color::palettes::css::*};
+use part::primitives;
 use tools::colors;
 use part::components::ExtrusionParams;
-use part::components::Part;
 use ui::{ui_elements::ToolbarAction, EditorMode};
-use view::PanOrbitCamera;
 
 // #[derive(Component)]
 // struct CameraGizmo;
@@ -70,19 +71,8 @@ fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>, 
-    mut gizmos: Gizmos,
 ) {
-    let points = vec![
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(1.0, 0.0, 0.0),
-        Vec3::new(1.0, 1.0, 0.0),
-        Vec3::new(0.0, 1.0, 0.0),
-        Vec3::new(0.0, 0.0, 1.0),
-        Vec3::new(1.0, 0.0, 1.0),
-        Vec3::new(1.0, 1.0, 1.0),
-        Vec3::new(0.0, 1.0, 1.0),
-    ];
+    let points = primitives::CubePoints::get_points();
 
     part::create_3d_object_system(&mut commands, &mut meshes, &mut materials, points);
     let no_change_matl = materials.add(colors::NO_CHANGE_COLOR);
@@ -194,13 +184,12 @@ struct MyRoundGizmos {}
 
 fn draw_gizmos(
     mut gizmos: Gizmos,
-    mut my_gizmos: Gizmos<MyRoundGizmos>,
     _time: Res<Time>,
     camera_q: Query<(&Camera, &GlobalTransform), With<Camera>>,
     windows: Query<&Window>,
 ) {
     // Draw orientation gizmo in top-left corner
-    if let (Ok((camera, camera_transform)), Ok(window)) = (camera_q.get_single(), windows.get_single()) {
+    if let (Ok((camera, camera_transform)), Ok(_window)) = (camera_q.get_single(), windows.get_single()) {
         let screen_pos = Vec2::new(
             100.0,  // 100 pixels from left
             100.0,  // 100 pixels from top
