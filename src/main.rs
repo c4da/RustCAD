@@ -8,13 +8,21 @@ mod ai;
 use std::f32::consts::PI;
 
 use crate::plugins::global_gizmo_plugin::GlobalGizmoPlugin;
-use crate::plugins::ai_console::AiConsolePlugin;
+// use crate::plugins::ai_console::AiConsolePlugin;
+use tokio::runtime::Runtime;
 
-use bevy::{prelude::*, color::palettes::css::*};
+use crate::{ai::{
+                ai_client::AiClient,
+                secretive_secret::API_KEY,
+            }};
+
+use bevy::prelude::*;
+use ui::output_console::OutputConsole;
 use part::primitives;
 use tools::colors;
 use part::components::ExtrusionParams;
-use ui::{ui_elements::ToolbarAction, EditorMode};
+use ui::{ui_elements::ToolbarAction, EditorMode, output_console::AsyncRuntime};
+use bevy_egui::{EguiPlugin, EguiContexts};
 
 // #[derive(Component)]
 // struct CameraGizmo;
@@ -27,18 +35,25 @@ use ui::{ui_elements::ToolbarAction, EditorMode};
 //     rotation: Quat,
 // }
 
+
+
 fn main() {
+    
     App::new()
         // MeshPickingPlugin is not a default plugin
         .add_plugins((DefaultPlugins, 
                     MeshPickingPlugin,
                     GlobalGizmoPlugin,
-                    AiConsolePlugin,))
+                    // AiConsolePlugin,
+                    EguiPlugin))
         .add_event::<ToolbarAction>()
         .insert_resource(ExtrusionParams {
             direction: Vec3::Y,
             distance: 1.0,
         })
+        .insert_resource(AiClient::new(API_KEY.to_string()))
+        .insert_resource(AsyncRuntime(Runtime::new().expect("Failed to create Tokio runtime")))
+        .insert_resource(OutputConsole::new(100))
         .init_gizmo_group::<MyRoundGizmos>()
         .init_resource::<EditorMode>()
         // .init_resource::<GizmoState>()
@@ -60,6 +75,8 @@ fn main() {
             part::mouse_part_systems::draw_mesh_intersections,
             part::mouse_part_systems::rotate,
             draw_gizmos,
+            ui::console_ui_system,
+            ui::handle_api_response,
         ).chain())
         .run();
 }
@@ -103,15 +120,15 @@ fn setup_scene(
     ));
 
     // Instructions
-    commands.spawn((
-        Text::new("Hover over the shapes to pick them\nDrag to rotate"),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(50.0),
-            left: Val::Percent(50.0),
-            ..default()
-        },
-    ));
+    // commands.spawn((
+    //     Text::new("Hover over the shapes to pick them\nDrag to rotate"),
+    //     Node {
+    //         position_type: PositionType::Absolute,
+    //         top: Val::Px(50.0),
+    //         left: Val::Percent(50.0),
+    //         ..default()
+    //     },
+    // ));
 
     // let translation = Vec3::new(100.0, 100.0, 0.0);
 
@@ -205,7 +222,7 @@ fn draw_gizmos(
     }
 
     // Draw world origin marker
-    gizmos.cross(Vec3::new(0., 0., 0.), 0.5, FUCHSIA);
+    gizmos.cross(Vec3::new(0., 0., 0.), 0.5, colors::RED);
     gizmos.grid(
         Quat::from_rotation_x(PI / 2.),
         UVec2::splat(20),
