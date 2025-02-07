@@ -1,6 +1,7 @@
 use crate::tools;
 
-use bevy::prelude::*;
+use bevy::{prelude::*,
+    pbr::{CascadeShadowConfigBuilder, NotShadowCaster, NotShadowReceiver}};
 use tools::colors;
 
 /// The GizmoPlugin for displaying a transformation gizmo in a Bevy application.
@@ -34,6 +35,8 @@ fn setup_gizmo(
         Transform::from_xyz(1.0, 0.0, 0.0).with_translation(translation),
         Gizmo,
         PickingBehavior::IGNORE,
+        NotShadowCaster,
+        NotShadowReceiver
     ));
 
     // World Gizmo (Y-axis)
@@ -48,6 +51,8 @@ fn setup_gizmo(
         Transform::from_xyz(0.0, 1.0, 0.0).with_translation(translation),
         Gizmo,
         PickingBehavior::IGNORE,
+        NotShadowCaster,
+        NotShadowReceiver
     ));
 
     // World Gizmo (Z-axis)
@@ -61,6 +66,8 @@ fn setup_gizmo(
         Transform::from_xyz(0.0, 0.0, 1.0).with_translation(translation),
         Gizmo,
         PickingBehavior::IGNORE,
+        NotShadowCaster,
+        NotShadowReceiver
     ));
 }
 
