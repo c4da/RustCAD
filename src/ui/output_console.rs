@@ -49,7 +49,7 @@ impl OutputConsole {
         ai_client: Res<AiClient>,
         ui: &mut egui::Ui) {
         // ui.heading("Console Input");
-        let input_field = ui.add(egui::TextEdit::singleline(&mut self.input_text));
+        let input_field = ui.add(egui::TextEdit::singleline(&mut self.input_text).desired_width(f32::INFINITY));
         if input_field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
             println!("Sending input: {}", self.input_text);
             let task = AsyncApiTask {
